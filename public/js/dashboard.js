@@ -12,7 +12,7 @@
 
   function buildStats(stats) {
     const defs = [
-      { label: 'Penjualan Hari Ini', color: 'blue', icon: 'cash', value: app.formatT(stats.todaySales), sub: app.formatNumber(stats.todayOrders) + ' transaksi hari ini' },
+      { label: 'Penjualan Hari Ini', color: 'blue', icon: 'banknote', value: app.formatT(stats.todaySales), sub: app.formatNumber(stats.todayOrders) + ' transaksi hari ini' },
       { label: 'Total Pendapatan', color: 'green', icon: 'trending-up', value: app.formatT(stats.revenue), sub: 'Rata-rata ' + app.formatT(stats.avgOrder) + ' / transaksi' },
       { label: 'Total Transaksi', color: 'amber', icon: 'receipt', value: app.formatNumber(stats.transactions), sub: 'Jumlah pesanan tercatat' },
       { label: 'Total Produk', color: 'violet', icon: 'package', value: app.formatNumber(stats.totalProducts), sub: app.formatNumber(stats.stockCount) + ' unit stok' },

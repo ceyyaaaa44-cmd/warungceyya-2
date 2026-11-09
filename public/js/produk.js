@@ -21,27 +21,45 @@
     return code;
   }
 
+  // Tabel encoding EAN-13 (modul 7 bit per digit).
+  // L = kode sisi kiri (bit paling kiri selalu 0), R = kebalikan L, G = reverse(R).
+  const EAN_L = [[0,0,0,1,1,0,1],[0,0,1,1,0,0,1],[0,0,1,0,0,1,1],[0,1,1,1,1,0,1],[0,1,0,0,0,1,1],[0,1,1,0,0,0,1],[0,1,0,1,1,1,1],[0,1,1,1,0,1,1],[0,1,1,0,1,1,1],[0,0,0,1,0,1,1]];
+  const EAN_R = EAN_L.map((b) => b.map((v) => (v ? 0 : 1)));
+  const EAN_G = EAN_R.map((b) => b.slice().reverse());
+  const EAN_PARITY = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+  // Render barcode EAN-13 yang SAH (95 modul: guard 101, 6 digit kiri dgn
+  // paritas, guard 01010, 6 digit kanan, guard 101) supaya bisa dibaca
+  // scanner laser maupun kamera.
   function renderBarcodeSVG(code, target) {
     const el = document.getElementById(target);
     if (!el || !code) { if (el) el.innerHTML = ''; return; }
     try {
-      const digits = code.replace(/\D/g, '');
+      const digits = String(code).replace(/\D/g, '');
       if (digits.length < 4) { el.innerHTML = '<span style="font-size:11px;color:#999">Terlalu pendek</span>'; return; }
-      const W = 2, H = 40, PAD = 10;
-      const bars = [];
-      const EAN_L = [[0,0,0,1,1,0,1],[0,0,1,1,0,0,1],[0,1,0,0,1,0,1],[0,1,1,1,0,0,1],[1,0,0,0,0,1,1],[1,0,1,1,0,0,1],[1,1,0,0,0,0,1],[1,1,0,1,1,0,1],[1,1,1,0,0,0,1],[1,1,1,1,1,0,1]];
-      const EAN_R = [[1,1,1,0,0,1,0],[1,1,0,0,1,1,0],[1,1,0,1,1,0,0],[1,0,0,0,0,1,0],[1,0,1,1,1,0,0],[1,1,0,0,0,1,0],[1,0,0,1,0,0,0],[1,0,0,0,1,0,0],[1,0,0,1,0,0,0],[1,1,1,0,0,1,0]];
-      bars.push(0, 0, 1, 0);
-      const half = Math.min(6, Math.ceil(digits.length / 2));
-      for (let i = 0; i < half; i++) { const d = parseInt(digits[i]) || 0; const pat = EAN_L[d] || EAN_L[0]; pat.forEach((v) => bars.push(v ? 1 : 0)); if (i < half - 1) bars.push(0); }
-      bars.push(1, 0, 1, 0);
-      for (let i = half; i < digits.length; i++) { const d = parseInt(digits[i]) || 0; const pat = EAN_R[d] || EAN_R[0]; pat.forEach((v) => bars.push(v ? 1 : 0)); if (i < digits.length - 1) bars.push(0); }
-      bars.push(0, 1, 0, 0, 1, 0, 1);
-      const totalW = PAD * 2 + bars.length * W;
+
+      // EAN-13 = 12 digit data + 1 digit check. Check digit selalu dihitung
+      // ulang agar barcode yang dicetak pasti valid untuk scanner.
+      const data12 = digits.length >= 12 ? digits.slice(0, 12) : digits.padStart(12, '0');
+      let sum = 0;
+      for (let i = 0; i < 12; i++) sum += parseInt(data12[i], 10) * (i % 2 === 0 ? 1 : 3);
+      const full = data12 + String((10 - (sum % 10)) % 10);
+
+      const d = full.split('').map(Number);
+      const parity = EAN_PARITY[d[0]];
+      let bits = '101';
+      for (let i = 1; i <= 6; i++) bits += (parity[i - 1] === 'L' ? EAN_L : EAN_G)[d[i]].join('');
+      bits += '01010';
+      for (let i = 7; i <= 12; i++) bits += EAN_R[d[i]].join('');
+      bits += '101';
+
+      const W = 2, H = 40, QUIET = 12; // quiet zone 12 modul (syarat EAN >= 11)
+      const totalW = (bits.length + QUIET * 2) * W;
       let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${H + 16}" width="${totalW}" height="${H + 16}" style="display:block">`;
       svg += `<rect width="${totalW}" height="${H + 16}" fill="white"/>`;
-      let x = PAD;
-      bars.forEach((b) => { if (b) svg += `<rect x="${x}" y="2" width="${W}" height="${H}" fill="black"/>`; x += W; });
+      for (let i = 0; i < bits.length; i++) {
+        if (bits[i] === '1') svg += `<rect x="${(QUIET + i) * W}" y="2" width="${W}" height="${H}" fill="black"/>`;
+      }
       svg += `<text x="${totalW / 2}" y="${H + 14}" text-anchor="middle" font-family="monospace" font-size="10" fill="#333">${digits}</text>`;
       svg += '</svg>';
       el.innerHTML = svg;

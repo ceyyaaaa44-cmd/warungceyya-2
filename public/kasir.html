@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kasir — Warung Cemilan</title>
+  <script>
+    (function() {
+      const _warn = console.warn;
+      console.warn = function(...args) {
+        if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        _warn.apply(console, args);
+      };
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } };
@@ -50,7 +59,7 @@
                 <span class="hidden sm:inline">Scan</span>
               </button>
             </div>
-            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 h-[420px] lg:h-auto overflow-y-auto no-scrollbar flex-1 pb-1">
+            <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 h-[420px] lg:h-auto overflow-y-auto no-scrollbar flex-1 pb-1 auto-rows-max content-start">
               <div class="skeleton h-32 rounded-2xl"></div>
               <div class="skeleton h-32 rounded-2xl"></div>
               <div class="skeleton h-32 rounded-2xl"></div>

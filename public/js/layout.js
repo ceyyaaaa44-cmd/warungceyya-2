@@ -84,7 +84,7 @@
           <i data-lucide="store" class="w-6 h-6"></i>
         </div>
         <div class="min-w-0">
-          <p class="font-bold text-gray-900 leading-tight truncate">Warung Cemilan</p>
+          <p class="font-bold text-gray-900 leading-tight truncate" data-store-name>Warung Cemilan</p>
           <p class="text-xs text-gray-400">Aplikasi Penjualan</p>
         </div>
       </div>
@@ -132,7 +132,7 @@
     return `
       <footer class="px-4 sm:px-6 lg:px-8 py-5">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-gray-100 pt-5">
-          <p class="text-xs text-gray-400">© ${new Date().getFullYear()} Warung Cemilan — Aplikasi Penjualan</p>
+          <p class="text-xs text-gray-400">© ${new Date().getFullYear()} <span data-store-name>Warung Cemilan</span> — Aplikasi Penjualan</p>
           <p class="text-xs text-gray-400 flex items-center gap-1.5">
             <i data-lucide="heart" class="w-3.5 h-3.5 text-red-400"></i>
             Dibuat dengan Tailwind & Lucide
@@ -173,7 +173,19 @@
     });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Ambil nama warung dari pengaturan supaya sidebar & footer ikut berubah
+    if (typeof app.get === 'function') {
+      app.get('api/settings')
+        .then((s) => app.applyStoreName(s && s.storeName))
+        .catch(() => {});
+    }
   }
+
+  app.applyStoreName = function (name) {
+    const n = String(name || '').trim() || 'Warung Cemilan';
+    document.querySelectorAll('[data-store-name]').forEach((el) => { el.textContent = n; });
+  };
 
   app.renderShell = function () {
     initShell();

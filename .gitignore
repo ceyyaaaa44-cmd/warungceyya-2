@@ -23,4 +23,6 @@ Desktop.ini
 # Editor
 .vscode/
 .idea/
-*.swpfirebase_b64.txt
+*.swp
+firebase_b64.txt
+

@@ -40,7 +40,10 @@
       logo,
     };
     app.put('api/settings', payload)
-      .then(() => app.toast('Pengaturan berhasil disimpan.'))
+      .then(() => {
+        if (app.applyStoreName) app.applyStoreName(payload.storeName);
+        app.toast('Pengaturan berhasil disimpan.');
+      })
       .catch((err) => app.toast(err.message || 'Gagal menyimpan.', 'error'));
   }
 

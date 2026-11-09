@@ -13,6 +13,99 @@
 
   function num(v) { return parseInt(String(v).replace(/[^\d]/g, ''), 10) || 0; }
 
+  /* ------------------------------ barcode scan ------------------------------ */
+
+  function normCode(v) {
+    return String(v == null ? '' : v).replace(/\D/g, '');
+  }
+
+  // Pencocokan fleksibel antara barcode produk dengan hasil scan / teks pencarian:
+  // kode 12 vs 13 digit (beda check digit), kode 13 digit dari scanner, sisa ketikan
+  // scan sebelumnya, dan pencarian sebagian.
+  function barcodeMatches(barcode, scanned) {
+    const b = normCode(barcode);
+    const s = normCode(scanned);
+    if (!b || !s) return false;
+    if (b === s) return true;
+    if (b.includes(s)) return true;
+    if (b.length >= 6 && s.includes(b)) return true;
+    if (b.length >= 12 && s.length >= 12 && b.slice(0, 12) === s.slice(0, 12)) return true;
+    return false;
+  }
+
+  function findProductByBarcode(code) {
+    const s = normCode(code);
+    if (!s) return null;
+    return products.find((p) => normCode(p.barcode) === s)
+      || products.find((p) => barcodeMatches(p.barcode, s))
+      || null;
+  }
+
+  function clearSearchBox() {
+    const box = document.getElementById('pos-search');
+    if (box) box.value = '';
+    currentSearch = '';
+    renderProducts();
+  }
+
+  // Satu jalur untuk semua hasil scan (kamera & scanner USB):
+  // cocok -> tambah ke keranjang, tidak cocok -> tampilkan di pencarian.
+  function handleScan(code) {
+    const clean = String(code == null ? '' : code).trim();
+    if (!clean) return;
+    const found = findProductByBarcode(clean);
+    if (found) {
+      addToCart(found.id);
+      clearSearchBox();
+      app.toast('Produk ditambahkan: ' + found.name);
+    } else {
+      const box = document.getElementById('pos-search');
+      if (box) box.value = clean;
+      currentSearch = clean;
+      renderProducts();
+      app.toast('Pencarian barcode: ' + clean, 'info');
+    }
+  }
+
+  // Scanner barcode USB (keyboard wedge): mengetik karakter dengan sangat cepat
+  // lalu diakhiri Enter/Tab, dari fokus mana pun. Tangkap di level document supaya
+  // scan tetap terbaca walau kursor tidak berada di kolom pencarian.
+  function setupHardwareScanner() {
+    let buf = '';
+    let timer = null;
+
+    function reset() {
+      buf = '';
+      if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    function flush() {
+      const code = buf.trim();
+      reset();
+      if (code.length >= 6) handleScan(code);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const el = e.target;
+      const tag = el && el.tagName ? el.tagName.toUpperCase() : '';
+      // Field input dibiarkan normal (kolom pencarian sudah punya handler sendiri)
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el && el.isContentEditable)) return;
+
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (buf.trim().length < 6) { reset(); return; } // biarkan perilaku default
+        e.preventDefault();
+        flush();
+        return;
+      }
+      if (e.key && e.key.length === 1) {
+        if (buf.length > 64) reset(); // terlalu panjang, kemungkinan bukan barcode
+        buf += e.key;
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(flush, 150); // scanner tanpa suffix Enter pun terbaca
+      }
+    });
+  }
+
   /* ------------------------------ kategori ------------------------------ */
 
   function renderCats() {
@@ -41,7 +134,8 @@
     if (currentCat !== 'Semua') list = list.filter((p) => p.categoryId === currentCat);
     if (currentSearch) {
       const n = currentSearch.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(n) || String(p.barcode).includes(n));
+      const numericQuery = /^[\d\s-]+$/.test(currentSearch.trim());
+      list = list.filter((p) => p.name.toLowerCase().includes(n) || (numericQuery && barcodeMatches(p.barcode, currentSearch)));
     }
     list = list.filter((p) => p.status !== 'nonaktif');
 
@@ -72,7 +166,7 @@
               ${out ? 'Habis' : 'Stok ' + p.stock}
             </span>
           </div>
-          <div class="p-2.5 sm:p-3 flex-1 flex flex-col justify-between">
+          <div class="p-2.5 sm:p-3 flex-1 flex flex-col">
             <div>
               <p class="font-bold text-gray-800 text-xs sm:text-sm leading-tight line-clamp-1 group-hover:text-blue-600 transition">${p.name}</p>
               <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">${p.unit || 'Pcs'}</p>
@@ -234,21 +328,7 @@
       { fps: 10, qrbox: { width: 250, height: 150 } },
       (decodedText) => {
         closeScanner();
-        const cleanScanned = String(decodedText).trim();
-        const found = products.find(p => {
-          const pbc = String(p.barcode || '').trim();
-          return pbc && (pbc === cleanScanned || pbc.includes(cleanScanned) || cleanScanned.includes(pbc));
-        });
-        if (found) {
-          addToCart(found.id);
-          app.toast('Produk ditambahkan: ' + found.name);
-        } else {
-          const cleanScanned = String(decodedText).trim();
-          document.getElementById('pos-search').value = cleanScanned;
-          currentSearch = cleanScanned;
-          renderProducts();
-          app.toast('Pencarian barcode: ' + cleanScanned, 'info');
-        }
+        handleScan(decodedText);
       },
       (error) => {}
     ).catch(err => {
@@ -311,6 +391,13 @@ const payload = {
       currentSearch = this.value.trim();
       renderProducts();
     }, 250));
+    document.getElementById('pos-search').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const code = this.value.trim();
+      if (code) handleScan(code);
+    });
+    setupHardwareScanner();
     document.getElementById('c-discount').addEventListener('input', () => updateTotals());
     document.getElementById('pay-amount').addEventListener('input', function () {
       this.value = app.escapeInput.toDisplay(this.value);
