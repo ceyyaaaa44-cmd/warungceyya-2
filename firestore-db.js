@@ -123,7 +123,7 @@ if (fs.existsSync(SA_PATH) || saEnv || saEnvB64) {
 const isVercel = !!process.env.VERCEL;
 const DATA_DIR = isVercel ? '/tmp' : path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'data.json');
-const SOURCE_DB = path.join(__dirname, 'data', 'data.json');
+const SOURCE_DB = fs.existsSync(path.join(__dirname, 'default_data.json')) ? path.join(__dirname, 'default_data.json') : path.join(__dirname, 'data', 'data.json');
 
 /* -------------------- helpers -------------------- */
 
@@ -214,7 +214,7 @@ async function loadFromFirestore() {
 function loadFromFlatFile() {
   ensureDir(DATA_DIR);
   if (!fs.existsSync(DB_FILE)) {
-    if (isVercel && fs.existsSync(SOURCE_DB)) {
+    if (fs.existsSync(SOURCE_DB)) {
       try { fs.copyFileSync(SOURCE_DB, DB_FILE); } catch (e) { seedDatabase(); return; }
     } else {
       seedDatabase();
