@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - Warung Cemilan</title>
+  <title>Login — Warung Cemilan</title>
   <script>
     (function() {
       const _warn = console.warn;
@@ -17,72 +17,225 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body class="bg-gradient-to-br from-blue-50 via-slate-50 to-blue-100 min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl shadow-blue-900/10 border border-gray-100 p-8">
-    <div class="text-center mb-8">
-      <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-blue-400 text-white items-center justify-center shadow-lg shadow-blue-600/30 mb-4">
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-blue-900/10 border border-gray-100 p-7 sm:p-8">
+    
+    <!-- Logo & Header -->
+    <div class="text-center mb-6">
+      <div class="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white items-center justify-center shadow-lg shadow-blue-600/30 mb-3">
         <i data-lucide="store" class="w-7 h-7"></i>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900">Warung Cemilan</h1>
-      <p class="text-sm text-gray-500 mt-1">Silakan masuk untuk mengakses aplikasi kasir</p>
+      <h1 class="text-2xl font-bold text-gray-900" id="store-title">Warung Cemilan</h1>
+      <p class="text-xs text-gray-400 mt-1">Pilih peran Anda untuk masuk ke sistem</p>
     </div>
 
+    <!-- Pilihan Peran: Kasir vs Admin -->
+    <div class="mb-6">
+      <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Pilih Mode Masuk</label>
+      <div class="grid grid-cols-2 gap-2.5 p-1.5 bg-gray-100/80 rounded-2xl border border-gray-200/60">
+        <!-- Tab Kasir -->
+        <button type="button" id="tab-kasir" class="role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-bold transition-all shadow-sm bg-white text-emerald-700 border border-emerald-200/70">
+          <i data-lucide="shopping-cart" class="w-4 h-4 text-emerald-600"></i>
+          <span>Kasir</span>
+        </button>
+        <!-- Tab Admin -->
+        <button type="button" id="tab-admin" class="role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:text-gray-900">
+          <i data-lucide="shield-check" class="w-4 h-4 text-gray-400"></i>
+          <span>Admin</span>
+        </button>
+      </div>
+      <p id="role-desc" class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 mt-2.5 text-center flex items-center justify-center gap-1.5 font-medium">
+        <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
+        <span>Mode Kasir: Langsung membuka kasir POS & riwayat transaksi</span>
+      </p>
+    </div>
+
+    <!-- Form Login -->
     <form id="login-form" class="space-y-4">
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Username / Nama Kasir</label>
+        <label id="lbl-username" class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">Username / Nama Kasir</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 pointer-events-none">
             <i data-lucide="user" class="w-4 h-4"></i>
           </span>
-          <input type="text" id="username" required placeholder="Contoh: admin atau kasir1" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition" />
+          <input type="text" id="username" required placeholder="Contoh: kasir1" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-sm outline-none transition" />
         </div>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">PIN / Password</label>
+        <label id="lbl-password" class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">PIN / Password Kasir</label>
         <div class="relative">
           <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 pointer-events-none">
             <i data-lucide="lock" class="w-4 h-4"></i>
           </span>
-          <input type="password" id="password" required placeholder="Masukkan PIN / password" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition" />
+          <input type="password" id="password" required placeholder="Masukkan PIN atau password" class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-sm outline-none transition" />
         </div>
       </div>
 
       <div id="error-msg" class="hidden p-3 rounded-xl bg-red-50 border border-red-100 text-xs text-red-600 font-medium"></div>
 
-      <button type="submit" id="btn-submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2">
-        <span>Masuk ke Aplikasi</span>
+      <button type="submit" id="btn-submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+        <span id="btn-text">Masuk sebagai Kasir</span>
         <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </button>
     </form>
 
-    <div class="mt-8 pt-6 border-t border-gray-100 text-center">
-      <p class="text-xs text-gray-400">Akun default: <span class="font-semibold text-gray-600">admin</span> atau <span class="font-semibold text-gray-600">kasir1</span></p>
+    <!-- Pilihan Cepat / Bantuan Akun Default -->
+    <div class="mt-6 pt-5 border-t border-gray-100 text-center space-y-2">
+      <p class="text-xs text-gray-400">Pintasan Akun Default:</p>
+      <div class="flex items-center justify-center gap-2">
+        <button type="button" id="btn-quick-kasir" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition border border-emerald-100">
+          Kasir (kasir1)
+        </button>
+        <button type="button" id="btn-quick-admin" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition border border-blue-100">
+          Admin (admin)
+        </button>
+      </div>
     </div>
+
   </div>
 
   <script src="js/app.js"></script>
   <script>
     lucide.createIcons();
+
+    let currentRole = 'kasir'; // 'kasir' | 'admin'
+
+    const tabKasir = document.getElementById('tab-kasir');
+    const tabAdmin = document.getElementById('tab-admin');
+    const roleDesc = document.getElementById('role-desc');
+    const lblUser = document.getElementById('lbl-username');
+    const lblPass = document.getElementById('lbl-password');
+    const inputUser = document.getElementById('username');
+    const inputPass = document.getElementById('password');
+    const btnSubmit = document.getElementById('btn-submit');
+    const btnText = document.getElementById('btn-text');
+
+    function setRole(role) {
+      currentRole = role;
+      if (role === 'kasir') {
+        tabKasir.className = 'role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-bold transition-all shadow-sm bg-white text-emerald-700 border border-emerald-200/70';
+        tabAdmin.className = 'role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:text-gray-900';
+        
+        roleDesc.className = 'text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-2.5 mt-2.5 text-center flex items-center justify-center gap-1.5 font-medium';
+        roleDesc.innerHTML = '<i data-lucide=\"info\" class=\"w-3.5 h-3.5 shrink-0\"></i><span>Mode Kasir: Langsung membuka kasir POS & riwayat transaksi</span>';
+        
+        lblUser.textContent = 'Username / Nama Kasir';
+        inputUser.placeholder = 'Contoh: kasir1';
+        lblPass.textContent = 'PIN / Password Kasir';
+        
+        btnSubmit.className = 'w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2';
+        btnText.textContent = 'Masuk sebagai Kasir';
+      } else {
+        tabAdmin.className = 'role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-bold transition-all shadow-sm bg-white text-blue-700 border border-blue-200/70';
+        tabKasir.className = 'role-tab flex items-center justify-center gap-2.5 py-3 px-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:text-gray-900';
+        
+        roleDesc.className = 'text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-xl p-2.5 mt-2.5 text-center flex items-center justify-center gap-1.5 font-medium';
+        roleDesc.innerHTML = '<i data-lucide=\"shield\" class=\"w-3.5 h-3.5 shrink-0\"></i><span>Mode Admin: Hak akses penuh ke Dashboard, Produk, Laporan, & Pengaturan</span>';
+        
+        lblUser.textContent = 'Username Administrator';
+        inputUser.placeholder = 'Contoh: admin';
+        lblPass.textContent = 'Password Administrator';
+        
+        btnSubmit.className = 'w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2';
+        btnText.textContent = 'Masuk sebagai Administrator';
+      }
+      lucide.createIcons();
+    }
+
+    tabKasir.addEventListener('click', () => setRole('kasir'));
+    tabAdmin.addEventListener('click', () => setRole('admin'));
+
+    // Pintasan Akun Cepat
+    document.getElementById('btn-quick-kasir').addEventListener('click', () => {
+      setRole('kasir');
+      inputUser.value = 'kasir1';
+      inputPass.value = '1234';
+      inputUser.focus();
+    });
+    document.getElementById('btn-quick-admin').addEventListener('click', () => {
+      setRole('admin');
+      inputUser.value = 'admin';
+      inputPass.value = 'admin';
+      inputUser.focus();
+    });
+
+    // Ambil nama warung dari pengaturan jika tersedia
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(s => {
+        if (s && s.storeName) document.getElementById('store-title').textContent = s.storeName;
+      })
+      .catch(() => {});
+
+    // Proses Submit Login
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
+      const username = inputUser.value.trim();
+      const password = inputPass.value.trim();
       const errEl = document.getElementById('error-msg');
       errEl.classList.add('hidden');
       
+      btnSubmit.disabled = true;
+      btnSubmit.classList.add('opacity-75');
+
       try {
-        const res = await fetch('/api/users');
-        const data = await res.json();
-        const users = data.users || [];
-        const found = users.find(u => u.username.toLowerCase() === username.toLowerCase() || u.name.toLowerCase() === username.toLowerCase());
-        
-        const userObj = found || { id: 'usr_' + Date.now(), name: username, username, role: username.toLowerCase().includes('admin') ? 'admin' : 'kasir', status: 'aktif' };
-        localStorage.setItem('warung_user', JSON.stringify(userObj));
-        window.location.href = 'dashboard.html';
+        let users = [];
+        try {
+          const res = await fetch('/api/users');
+          const data = await res.json();
+          users = data.users || [];
+        } catch (fetchErr) {
+          console.warn('Cannot fetch users from server, fallback to local');
+        }
+
+        const found = users.find(u => 
+          (u.username && u.username.toLowerCase() === username.toLowerCase()) || 
+          (u.name && u.name.toLowerCase() === username.toLowerCase())
+        );
+
+        let userObj = null;
+
+        if (currentRole === 'admin') {
+          // Validasi mode Admin
+          if (found && found.role !== 'admin') {
+            errEl.textContent = 'Akun \"' + username + '\" terdaftar sebagai Kasir, bukan Administrator. Silakan klik tab Kasir untuk masuk.';
+            errEl.classList.remove('hidden');
+            btnSubmit.disabled = false;
+            btnSubmit.classList.remove('opacity-75');
+            return;
+          }
+          userObj = found || {
+            id: 'usr_admin',
+            name: username.toLowerCase() === 'admin' ? 'Admin Warung' : username,
+            username: username,
+            role: 'admin',
+            status: 'aktif'
+          };
+          userObj.role = 'admin'; // Pastikan role admin
+          localStorage.setItem('warung_user', JSON.stringify(userObj));
+          // Admin diarahkan ke Dashboard
+          window.location.href = 'dashboard.html';
+        } else {
+          // Validasi mode Kasir
+          userObj = found || {
+            id: 'usr_' + Date.now(),
+            name: username.toLowerCase() === 'kasir1' ? 'Andi Kasir' : username,
+            username: username,
+            role: 'kasir',
+            status: 'aktif'
+          };
+          userObj.role = 'kasir'; // Pastikan role kasir
+          localStorage.setItem('warung_user', JSON.stringify(userObj));
+          // Kasir langsung diarahkan ke Kasir POS
+          window.location.href = 'kasir.html';
+        }
+
       } catch (err) {
-        const mockUser = { id: 'usr_mock', name: username, username, role: 'admin' };
-        localStorage.setItem('warung_user', JSON.stringify(mockUser));
-        window.location.href = 'dashboard.html';
+        errEl.textContent = err.message || 'Gagal masuk. Silakan coba lagi.';
+        errEl.classList.remove('hidden');
+        btnSubmit.disabled = false;
+        btnSubmit.classList.remove('opacity-75');
       }
     });
   </script>

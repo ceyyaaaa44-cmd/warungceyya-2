@@ -363,11 +363,18 @@
       app.toast('Uang kurang Rp ' + short.toLocaleString('id-ID'), 'error');
       return;
     }
-const payload = {
+let currentKasir = 'Kasir';
+    try {
+      const u = JSON.parse(localStorage.getItem('warung_user') || '{}');
+      if (u.name) currentKasir = u.name;
+    } catch(e) {}
+
+    const payload = {
       method: payMethod,
       discount: num(document.getElementById('c-discount').value),
       paid: payMethod === 'Tunai' ? paid : total,
       items: cartEntries().map((e) => ({ productId: e.p.id, qty: e.qty })),
+      kasir: currentKasir,
     };
     const btn = document.getElementById('btn-confirm-pay');
     btn.disabled = true;
