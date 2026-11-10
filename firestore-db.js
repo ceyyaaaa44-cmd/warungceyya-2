@@ -213,21 +213,17 @@ async function loadFromFirestore() {
 
 function loadFromFlatFile() {
   ensureDir(DATA_DIR);
-  if (!fs.existsSync(DB_FILE)) {
-    if (fs.existsSync(SOURCE_DB)) {
-      try { fs.copyFileSync(SOURCE_DB, DB_FILE); } catch (e) { seedDatabase(); return; }
-    } else {
-      seedDatabase();
-      return;
-    }
-  }
   try {
-    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    COLLECTIONS.forEach((k) => { if (Array.isArray(data[k])) cache[k] = data[k]; });
-    if (data.settings) cache.settings = { ...cache.settings, ...data.settings };
-  } catch (e) {
-    seedDatabase();
-  }
+    if (fs.existsSync(DB_FILE)) {
+      const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      if (Array.isArray(data.products) && data.products.length > 0) {
+        COLLECTIONS.forEach((k) => { if (Array.isArray(data[k])) cache[k] = data[k]; });
+        if (data.settings) cache.settings = { ...cache.settings, ...data.settings };
+        return;
+      }
+    }
+  } catch (e) {}
+  seedDatabase();
 }
 
 async function load() {
@@ -394,6 +390,18 @@ const SEED_PRODUCTS = [
 ];
 
 function seedDatabase() {
+  try {
+    const defaultData = require('./default_data.json');
+    COLLECTIONS.forEach((k) => { if (Array.isArray(defaultData[k])) cache[k] = JSON.parse(JSON.stringify(defaultData[k])); });
+    if (defaultData.settings) cache.settings = { ...cache.settings, ...defaultData.settings };
+    try {
+      ensureDir(DATA_DIR);
+      fs.writeFileSync(DB_FILE, JSON.stringify(defaultData), 'utf8');
+    } catch (errW) {}
+    return;
+  } catch (eDefault) {
+    console.warn('[DB] fallback to default_data failed, using procedural seed:', eDefault.message);
+  }
   const rng = mulberry32(20260806);
 
   const categories = SEED_CATEGORIES.map((c) => ({
