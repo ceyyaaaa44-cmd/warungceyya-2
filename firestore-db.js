@@ -184,16 +184,31 @@ const COLLECTIONS = [
 
 /* -------------------- load -------------------- */
 
+const lastSync = {};
+
 async function loadFromFirestore() {
-  const promises = COLLECTIONS.map(async (name) => {
-    const snap = await firestore.collection(name).get();
-    cache[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  });
-  const settingsSnap = await firestore.collection('settings').doc('main').get();
-  if (settingsSnap.exists) {
-    cache.settings = { ...cache.settings, ...settingsSnap.data() };
+  for (const name of COLLECTIONS) {
+    try {
+      const snap = await firestore.collection(name).get();
+      cache[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      lastSync[name] = Date.now();
+    } catch (err) {
+      console.warn(`[DB] Failed to load ${name} from Firestore:`, err.message);
+    }
   }
-  await Promise.all(promises);
+  try {
+    const settingsSnap = await firestore.collection('settings').doc('main').get();
+    if (settingsSnap.exists) {
+      cache.settings = { ...cache.settings, ...settingsSnap.data() };
+      lastSync['settings'] = Date.now();
+    }
+  } catch (err) {
+    console.warn('[DB] Failed to load settings from Firestore:', err.message);
+  }
+  if (!cache.products.length || !cache.categories.length) {
+    console.log('[DB] Firestore returned empty or failed, loading from local flat-file');
+    loadFromFlatFile();
+  }
 }
 
 function loadFromFlatFile() {
@@ -217,7 +232,11 @@ function loadFromFlatFile() {
 
 async function load() {
   if (useFirestore) {
-    await loadFromFirestore();
+    try {
+      await loadFromFirestore();
+    } catch (e) {
+      loadFromFlatFile();
+    }
   } else {
     loadFromFlatFile();
   }
@@ -259,48 +278,74 @@ async function save() {
 
 async function addDoc(collection, data) {
   if (useFirestore) {
-    await firestore.collection(collection).doc(data.id).set(data);
+    try {
+      await firestore.collection(collection).doc(data.id).set(data);
+    } catch (err) {
+      console.warn(`[DB] Failed to add doc to ${collection}:`, err.message);
+    }
   }
 }
 
 async function updateDoc(collection, id, data) {
   if (useFirestore) {
-    await firestore.collection(collection).doc(id).set(data);
+    try {
+      await firestore.collection(collection).doc(id).set(data);
+    } catch (err) {
+      console.warn(`[DB] Failed to update doc in ${collection}:`, err.message);
+    }
   }
 }
 
 async function deleteDoc(collection, id) {
   if (useFirestore) {
-    await firestore.collection(collection).doc(id).delete();
+    try {
+      await firestore.collection(collection).doc(id).delete();
+    } catch (err) {
+      console.warn(`[DB] Failed to delete doc from ${collection}:`, err.message);
+    }
   }
 }
 
 async function saveSettings() {
   if (useFirestore) {
-    await firestore.collection('settings').doc('main').set(cache.settings);
+    try {
+      await firestore.collection('settings').doc('main').set(cache.settings);
+    } catch (err) {
+      console.warn('[DB] Failed to save settings to Firestore:', err.message);
+    }
   }
 }
 
-async function syncCollection(name) {
+async function syncCollection(name, minIntervalMs = 15000) {
   if (!useFirestore) return cache[name] || [];
+  const now = Date.now();
+  if (lastSync[name] && (now - lastSync[name] < minIntervalMs)) {
+    return cache[name] || [];
+  }
   try {
     const snap = await firestore.collection(name).get();
     cache[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    lastSync[name] = now;
   } catch (err) {
-    console.warn('[DB] Failed to sync ' + name + ':', err.message);
+    console.warn('[DB] Failed to sync ' + name + ' (quota/network):', err.message);
   }
   return cache[name] || [];
 }
 
-async function syncSettings() {
+async function syncSettings(minIntervalMs = 30000) {
   if (!useFirestore) return cache.settings;
+  const now = Date.now();
+  if (lastSync['settings'] && (now - lastSync['settings'] < minIntervalMs)) {
+    return cache.settings;
+  }
   try {
     const snap = await firestore.collection('settings').doc('main').get();
     if (snap.exists) {
       cache.settings = { ...cache.settings, ...snap.data() };
+      lastSync['settings'] = now;
     }
   } catch (err) {
-    console.warn('[DB] Failed to sync settings:', err.message);
+    console.warn('[DB] Failed to sync settings (quota/network):', err.message);
   }
   return cache.settings;
 }
