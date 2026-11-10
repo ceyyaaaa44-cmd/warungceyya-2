@@ -12,6 +12,14 @@ const DEFAULT_USER = { id: 'usr_admin', name: 'Admin Warung', username: 'admin',
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Disable caching for all API endpoints so updates always show immediately
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 function requireAuth(req, res, next) {
   req.user = DEFAULT_USER;
   next();
@@ -26,7 +34,10 @@ app.get('/api/db-status', (req, res) => {
   });
 });
 
-app.get('/api/settings', (req, res) => res.json(db.getDB().settings));
+app.get('/api/settings', async (req, res) => {
+  await db.syncSettings();
+  res.json(db.getDB().settings);
+});
 
 app.put('/api/settings', async (req, res) => {
   const s = db.getDB().settings;
@@ -69,7 +80,8 @@ app.post('/api/restore', async (req, res) => {
 
 /* ------------------------------ dashboard ------------------------------ */
 
-app.get('/api/dashboard', requireAuth, (req, res) => {
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('transactions')]);
   const { products, transactions } = db.getDB();
   const today = db.todayKey();
 
@@ -122,7 +134,8 @@ function publicCategory(c) {
   return { id: c.id, name: c.name, icon: c.icon || '🗂️', color: c.color || '#64748b', count, createdAt: c.createdAt };
 }
 
-app.get('/api/categories', (req, res) => {
+app.get('/api/categories', async (req, res) => {
+  await Promise.all([db.syncCollection('categories'), db.syncCollection('products')]);
   res.json({ categories: db.getDB().categories.map(publicCategory) });
 });
 
@@ -171,7 +184,8 @@ function enrichProduct(p) {
   return out;
 }
 
-app.get('/api/products', (req, res) => {
+app.get('/api/products', async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('categories')]);
   const { q, catId, status } = req.query;
   let list = db.getDB().products.slice();
   const toys = (s) => String(s || '').toLowerCase();
@@ -184,7 +198,8 @@ app.get('/api/products', (req, res) => {
   res.json({ products: list.map(enrichProduct), categories: db.getDB().categories.map((c) => c.name) });
 });
 
-app.get('/api/products-full', (req, res) => {
+app.get('/api/products-full', async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('categories')]);
   res.json({ products: db.getDB().products.map(enrichProduct) });
 });
 
@@ -296,13 +311,15 @@ app.post('/api/products/:id/stock', requireAuth, async (req, res) => {
   res.json({ product: enrichProduct(p) });
 });
 
-app.get('/api/stock', (req, res) => {
+app.get('/api/stock', async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('stockHistory')]);
   const { productId } = req.query;
   let list = db.getDB().stockHistory.slice();
   if (productId) list = list.filter((s) => s.productId === productId);
   res.json({ history: list.slice(0, 300) });
 });
-app.get('/api/stok', (req, res) => {
+app.get('/api/stok', async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('stockHistory')]);
   const d = db.getDB();
   const list = d.products.map(enrichProduct);
   res.json({ stok: list, history: d.stockHistory.slice(0, 300) });
@@ -310,25 +327,28 @@ app.get('/api/stok', (req, res) => {
 
 /* ------------------------------ orders (POS) ------------------------------ */
 
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', async (req, res) => {
+  await db.syncCollection('orders');
   let list = db.getDB().orders.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const { q } = req.query;
   if (q) {
     const needle = String(q).toLowerCase();
     list = list.filter((o) => o.id.toLowerCase().includes(needle) || o.kasir.toLowerCase().includes(needle));
   }
-  const { page = 1, limit = 15 } = req.query;
+  const { page = 1, limit = 50 } = req.query;
   const start = (parseInt(page, 10) - 1) * parseInt(limit, 10);
   res.json({ orders: list.slice(start, start + parseInt(limit, 10)), total: list.length });
 });
 
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
+  await Promise.all([db.syncCollection('orders'), db.syncSettings()]);
   const o = db.getDB().orders.find((x) => x.id === req.params.id);
   if (!o) return res.status(404).json({ error: 'Pesanan tidak ditemukan.' });
   res.json({ order: o, settings: db.getDB().settings });
 });
 
 app.post('/api/orders', requireAuth, async (req, res) => {
+  await Promise.all([db.syncSettings(), db.syncCollection('products')]);
   const d = db.getDB();
   const { items, discount, method, paid, kasir } = req.body || {};
   if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Pesanan kosong.' });
@@ -432,7 +452,8 @@ app.delete('/api/orders/:id', async (req, res) => {
 
 /* ------------------------------ transactions ------------------------------ */
 
-app.get('/api/transactions', (req, res) => {
+app.get('/api/transactions', async (req, res) => {
+  await db.syncCollection('transactions');
   let list = db.getDB().transactions.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const { start, end, q } = req.query;
   if (start) list = list.filter((t) => db.dayKeyOf(t.createdAt) >= start);

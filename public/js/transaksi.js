@@ -45,9 +45,15 @@
   function load() {
     const params = new URLSearchParams();
     if (filters.q) params.set('q', filters.q);
+    params.set('limit', '100');
     return app.get('api/orders?' + params.toString())
       .then((d) => {
-        orders = d.orders.filter((o) => filters.method === 'Semua' || o.method === filters.method);
+        const raw = d.orders || [];
+        orders = raw.filter((o) => {
+          const matchMethod = !filters.method || filters.method === 'Semua' || o.method === filters.method;
+          const matchStatus = !filters.status || filters.status === 'Semua' || o.status === filters.status;
+          return matchMethod && matchStatus;
+        });
         render();
       })
       .catch((e) => {
@@ -132,8 +138,19 @@
     }, 300));
     document.getElementById('btn-box').addEventListener('click', () => {
       filters.method = document.getElementById('ri-method').value;
+      filters.status = document.getElementById('ri-status')?.value || 'Semua';
       load();
     });
+    const btnRef = document.getElementById('btn-refresh');
+    if (btnRef) {
+      btnRef.addEventListener('click', () => {
+        const icon = btnRef.querySelector('i, svg');
+        if (icon) icon.classList.add('animate-spin');
+        load().finally(() => { if (icon) icon.classList.remove('animate-spin'); });
+      });
+    }
+    window.addEventListener('focus', () => load());
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
     document.querySelectorAll('#detail-modal [data-close]').forEach((el) => el.addEventListener('click', closeDetail));
     document.getElementById('btn-print-detail').addEventListener('click', () => { if (currentOrder) printOrder(currentOrder.id); });
     load();

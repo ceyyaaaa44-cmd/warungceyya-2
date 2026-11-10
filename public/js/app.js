@@ -7,9 +7,11 @@
 
   app.request = async function (method, url, body) {
     const headers = { 'Content-Type': 'application/json' };
-    const res = await fetch(url, {
+    const reqUrl = (method === 'GET' && !url.includes('_t=')) ? (url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now()) : url;
+    const res = await fetch(reqUrl, {
       method,
       headers,
+      cache: 'no-store',
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));

@@ -281,6 +281,30 @@ async function saveSettings() {
   }
 }
 
+async function syncCollection(name) {
+  if (!useFirestore) return cache[name] || [];
+  try {
+    const snap = await firestore.collection(name).get();
+    cache[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('[DB] Failed to sync ' + name + ':', err.message);
+  }
+  return cache[name] || [];
+}
+
+async function syncSettings() {
+  if (!useFirestore) return cache.settings;
+  try {
+    const snap = await firestore.collection('settings').doc('main').get();
+    if (snap.exists) {
+      cache.settings = { ...cache.settings, ...snap.data() };
+    }
+  } catch (err) {
+    console.warn('[DB] Failed to sync settings:', err.message);
+  }
+  return cache.settings;
+}
+
 /* -------------------- seed data (flat-file only) -------------------- */
 
 function mulberry32(seed) {
@@ -471,6 +495,7 @@ function publicProduct(p) {
 
 module.exports = {
   getDB, load, save, saveSettings, addDoc, updateDoc, deleteDoc,
+  syncCollection, syncSettings,
   uid, now, todayKey, dayKeyOf, nextInvoiceNo, publicProduct,
   get useFirestore() { return useFirestore; },
   getInitStatus: () => initStatus,
