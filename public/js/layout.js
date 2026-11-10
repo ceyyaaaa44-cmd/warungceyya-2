@@ -48,7 +48,7 @@
     }
     const page = currentPage();
     if (user.role === 'kasir') {
-      const allowed = ['kasir', 'transaksi'];
+      const allowed = ['kasir', 'transaksi', 'laporan'];
       if (!allowed.includes(page)) {
         window.location.href = 'kasir.html';
         return null;
@@ -75,6 +75,7 @@
     const list = isKasir ? [
       { key: 'kasir', label: 'Kasir (POS)', icon: 'shopping-cart', href: 'kasir.html' },
       { key: 'transaksi', label: 'Riwayat Transaksi', icon: 'receipt', href: 'transaksi.html' },
+      { key: 'laporan', label: 'Laporan Penghasilan', icon: 'bar-chart-3', href: 'laporan.html' },
     ] : NAV;
 
     return list.map((item) => {

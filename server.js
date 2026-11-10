@@ -473,21 +473,61 @@ app.get('/api/transactions', async (req, res) => {
 
 /* ------------------------------ report ------------------------------ */
 
-app.get('/api/report', (req, res) => {
-  const { start, end, kasir, category } = req.query;
-  let list = db.getDB().transactions.slice().filter((t) => t.status === 'Lunas');
-  if (start) list = list.filter((t) => db.dayKeyOf(t.createdAt) >= start);
-  if (end) list = list.filter((t) => db.dayKeyOf(t.createdAt) <= end);
+app.get('/api/report', async (req, res) => {
+  await Promise.all([
+    db.syncCollection('transactions'),
+    db.syncCollection('orders'),
+    db.syncCollection('products'),
+    db.syncCollection('categories')
+  ]);
+
+  const { start, end, kasir, category, period } = req.query;
+  const d = db.getDB();
+
+  let startDate = start;
+  let endDate = end;
+
+  const now = new Date();
+  const toDayStr = (dt) => {
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  if (period === 'hari') {
+    startDate = toDayStr(now);
+    endDate = toDayStr(now);
+  } else if (period === 'minggu') {
+    const d7 = new Date();
+    d7.setDate(d7.getDate() - 6);
+    startDate = toDayStr(d7);
+    endDate = toDayStr(now);
+  } else if (period === 'bulan') {
+    const dMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startDate = toDayStr(dMonth);
+    endDate = toDayStr(now);
+  } else if (period === 'tahun') {
+    const dYear = new Date(now.getFullYear(), 0, 1);
+    startDate = toDayStr(dYear);
+    endDate = toDayStr(now);
+  }
+
+  let list = d.transactions.slice().filter((t) => t.status === 'Lunas');
+  if (startDate) list = list.filter((t) => db.dayKeyOf(t.createdAt) >= startDate);
+  if (endDate) list = list.filter((t) => db.dayKeyOf(t.createdAt) <= endDate);
   if (kasir && kasir !== 'Semua') list = list.filter((t) => t.kasir === kasir);
   if (category && category !== 'Semua') {
-    const prodIds = db.getDB().products
-      .filter((p) => (db.getDB().categories.find((c) => c.id === p.categoryId) || {}).name === category)
+    const prodIds = d.products
+      .filter((p) => (d.categories.find((c) => c.id === p.categoryId) || {}).name === category)
       .map((p) => p.id);
     list = list.filter((t) => prodIds.includes(t.productId));
   }
 
   const totalSales = list.reduce((a, t) => a + t.total, 0);
   const totalCost = list.reduce((a, t) => a + (t.modal || 0) * t.qty, 0);
+  const profit = totalSales - totalCost;
+
   const soldMap = {};
   list.forEach((t) => {
     if (!soldMap[t.productId]) soldMap[t.productId] = { name: t.productName, emoji: t.productEmoji, qty: 0, revenue: 0 };
@@ -499,33 +539,104 @@ app.get('/api/report', (req, res) => {
   const methodMap = {};
   list.forEach((t) => { methodMap[t.method || 'Tunai'] = (methodMap[t.method || 'Tunai'] || 0) + t.total; });
 
-  const dayMap = {};
+  const dayGroups = {};
   list.forEach((t) => {
     const k = db.dayKeyOf(t.createdAt);
-    dayMap[k] = (dayMap[k] || 0) + t.total;
+    if (!dayGroups[k]) {
+      const dObj = new Date(t.createdAt);
+      dayGroups[k] = {
+        dateKey: k,
+        dayName: dObj.toLocaleDateString('id-ID', { weekday: 'long' }),
+        dateFormatted: dObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+        fullDate: dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+        totalSales: 0,
+        totalCost: 0,
+        profit: 0,
+        txCount: 0,
+        itemsCount: 0,
+        kasirList: [],
+        methods: {},
+      };
+    }
+    dayGroups[k].totalSales += t.total;
+    dayGroups[k].totalCost += (t.modal || 0) * t.qty;
+    dayGroups[k].itemsCount += t.qty;
+    dayGroups[k].txCount += 1;
+    if (t.kasir && !dayGroups[k].kasirList.includes(t.kasir)) {
+      dayGroups[k].kasirList.push(t.kasir);
+    }
+    const m = t.method || 'Tunai';
+    dayGroups[k].methods[m] = (dayGroups[k].methods[m] || 0) + t.total;
   });
-  const daily = Object.keys(dayMap).sort().map((k) => ({ date: k, total: dayMap[k] }));
+
+  const dailyBreakdown = Object.values(dayGroups).sort((a, b) => b.dateKey.localeCompare(a.dateKey)).map((dg) => ({
+    ...dg,
+    profit: dg.totalSales - dg.totalCost,
+    kasir: dg.kasirList.join(', ') || 'Kasir',
+  }));
+
+  const daily = Object.keys(dayGroups).sort().map((k) => ({
+    date: k,
+    total: dayGroups[k].totalSales,
+  }));
+
+  // Orders in period (for the detailed orders record)
+  let orderList = d.orders.slice().filter((o) => o.status === 'Lunas');
+  if (startDate) orderList = orderList.filter((o) => db.dayKeyOf(o.createdAt) >= startDate);
+  if (endDate) orderList = orderList.filter((o) => db.dayKeyOf(o.createdAt) <= endDate);
+  if (kasir && kasir !== 'Semua') orderList = orderList.filter((o) => o.kasir === kasir);
+  orderList.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const detailedOrders = orderList.slice(0, 100).map((o) => {
+    const dObj = new Date(o.createdAt);
+    return {
+      id: o.id,
+      createdAt: o.createdAt,
+      dayName: dObj.toLocaleDateString('id-ID', { weekday: 'long' }),
+      dateFormatted: dObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+      fullDate: dObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+      timeFormatted: dObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB',
+      kasir: o.kasir || 'Kasir',
+      method: o.method || 'Tunai',
+      total: o.total,
+      subtotal: o.subtotal,
+      discount: o.discount || 0,
+      tax: o.tax || 0,
+      status: o.status,
+      itemsCount: Array.isArray(o.items) ? o.items.length : 0,
+    };
+  });
+
+  const uniqueKasir = [...new Set(d.transactions.map((t) => t.kasir).filter(Boolean))];
 
   res.json({
+    period: {
+      start: startDate,
+      end: endDate,
+      selectedPeriod: period || 'custom',
+    },
     summary: {
       totalRevenue: totalSales,
       totalSales,
       totalCost,
-      profit: totalSales - totalCost,
-      totalTransactions: list.length,
+      profit,
+      totalTransactions: orderList.length || list.length,
       totalItems: list.reduce((a, t) => a + t.qty, 0),
-      avgOrder: list.length ? Math.round(totalSales / list.length) : 0,
+      avgOrder: orderList.length ? Math.round(totalSales / orderList.length) : (list.length ? Math.round(totalSales / list.length) : 0),
       topProduct: bestSellers[0] ? bestSellers[0].name : '-',
     },
     totalSales,
     totalCost,
-    profit: totalSales - totalCost,
-    totalTransactions: list.length,
+    profit,
+    totalTransactions: orderList.length || list.length,
     totalItems: list.reduce((a, t) => a + t.qty, 0),
-    avgOrder: list.length ? Math.round(totalSales / list.length) : 0,
+    avgOrder: orderList.length ? Math.round(totalSales / orderList.length) : (list.length ? Math.round(totalSales / list.length) : 0),
     bestSellers,
     methods: methodMap,
     daily,
+    dailyBreakdown,
+    detailedOrders,
+    kasirList: uniqueKasir,
   });
 });
 
