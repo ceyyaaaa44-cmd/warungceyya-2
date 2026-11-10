@@ -489,6 +489,7 @@ function publicProduct(p) {
     categoryIcon: cat ? cat.icon : '🧰', categoryColor: cat ? cat.color : '#64748b',
     price: p.price, modal: p.modal || 0, stock: p.stock, unit: p.unit || 'Pcs',
     barcode: p.barcode || '', status: p.status || 'aktif', sold: 0,
+    addedBy: p.addedBy || '', addedByRole: p.addedByRole || '',
     createdAt: p.createdAt, updatedAt: p.updatedAt,
   };
 }

@@ -207,7 +207,7 @@ const isValidCat = (id) => db.getDB().categories.some((c) => c.id === id);
 
 function parseProductBody(body, existing) {
   const out = {};
-  const { name, price, modal, stock, unit, barcode, categoryId, emoji, image, status } = body || {};
+  const { name, price, modal, stock, unit, barcode, categoryId, emoji, image, status, addedBy, addedByRole } = body || {};
   if (name !== undefined) {
     const n = String(name).trim();
     if (!n) return { error: 'Nama produk wajib diisi.' };
@@ -226,6 +226,8 @@ function parseProductBody(body, existing) {
   if (emoji !== undefined) out.emoji = String(emoji || '🛍️').trim();
   if (image !== undefined) out.image = String(image || '').trim();
   if (status !== undefined) out.status = status === 'nonaktif' ? 'nonaktif' : 'aktif';
+  if (addedBy !== undefined) out.addedBy = String(addedBy).trim();
+  if (addedByRole !== undefined) out.addedByRole = String(addedByRole).trim();
   return out;
 }
 
@@ -251,6 +253,8 @@ app.post('/api/products', async (req, res) => {
     unit: parsed.unit || 'Pcs',
     barcode: parsed.barcode || '',
     status: parsed.status || 'aktif',
+    addedBy: parsed.addedBy || '',
+    addedByRole: parsed.addedByRole || '',
     createdAt: db.now(),
     updatedAt: db.now(),
   };

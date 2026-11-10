@@ -54,9 +54,13 @@
                 <input id="pos-search" type="text" placeholder="Cari produk atau barcode..."
                   class="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition text-sm shadow-sm" />
               </div>
-              <button id="btn-scan-barcode" title="Scan Barcode Kamera" class="px-4 py-3 bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-blue-600 rounded-2xl shadow-sm flex items-center gap-2 font-semibold text-sm transition">
+              <button id="btn-scan-barcode" title="Scan Barcode Kamera" class="px-3.5 py-3 bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-blue-600 rounded-2xl shadow-sm flex items-center gap-1.5 font-semibold text-sm transition shrink-0">
                 <i data-lucide="scan" class="w-5 h-5"></i>
                 <span class="hidden sm:inline">Scan</span>
+              </button>
+              <button id="btn-quick-add-product" title="Tambah Produk Baru" class="px-3.5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl shadow-sm shadow-emerald-600/25 flex items-center gap-1.5 font-semibold text-sm transition shrink-0">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span class="hidden sm:inline">Tambah Produk</span>
               </button>
             </div>
             <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 h-[420px] lg:h-auto overflow-y-auto no-scrollbar flex-1 pb-1 auto-rows-max content-start">
@@ -196,6 +200,90 @@
           BAYAR SEKARANG
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Produk oleh Kasir -->
+  <div id="modal-add-product" class="fixed inset-0 z-[85] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm overlay-in" data-close-prod></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md modal-card overflow-hidden">
+      <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-base">Tambah Produk Baru</h3>
+            <p class="text-xs text-gray-400" id="add-prod-kasir-sub">Oleh Kasir: ...</p>
+          </div>
+        </div>
+        <button data-close-prod class="p-2 -mr-2 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="form-quick-product" class="p-6 space-y-4 max-h-[82vh] overflow-y-auto no-scrollbar">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Nama Produk *</label>
+          <input id="qp-name" type="text" required placeholder="Contoh: Es Kopi Susu" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Kategori *</label>
+            <select id="qp-cat" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Satuan</label>
+            <select id="qp-unit" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm">
+              <option value="Pcs">Pcs</option>
+              <option value="Porsi">Porsi</option>
+              <option value="Gelas">Gelas</option>
+              <option value="Bungkus">Bungkus</option>
+              <option value="Botol">Botol</option>
+              <option value="Cup">Cup</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Harga Jual (Rp) *</label>
+            <input id="qp-price" type="text" required placeholder="0" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm font-semibold" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Stok Awal *</label>
+            <input id="qp-stock" type="number" min="0" value="10" required class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Modal / HPP (Rp)</label>
+            <input id="qp-modal" type="text" placeholder="Otomatis 60%" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Barcode (Opsional)</label>
+            <input id="qp-barcode" type="text" placeholder="Scan / nomor barcode" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition text-sm" />
+          </div>
+        </div>
+
+        <!-- Banner Keterangan Kasir -->
+        <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-start gap-2.5 text-xs text-emerald-800">
+          <i data-lucide="info" class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5"></i>
+          <div>
+            <p class="font-semibold">Keterangan Pembuat:</p>
+            <p class="mt-0.5 text-emerald-700" id="qp-creator-note">Produk ini akan ditandai dengan keterangan: <b>Ditambahkan oleh Kasir</b></p>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" id="btn-save-quick-prod" class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan & Tambah ke Kasir</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
