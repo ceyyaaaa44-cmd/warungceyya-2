@@ -165,18 +165,11 @@
             <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-sm ${out ? 'bg-red-500/90 text-white' : low ? 'bg-amber-500/90 text-white' : 'bg-emerald-500/90 text-white'}">
               ${out ? 'Habis' : 'Stok ' + p.stock}
             </span>
-            ${p.addedBy ? `
-            <span class="absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-md bg-emerald-600/90 text-white shadow-sm flex items-center gap-0.5" title="Ditambahkan oleh: ${p.addedBy}">
-              <i data-lucide="user-check" class="w-2.5 h-2.5"></i> Kasir
-            </span>` : ''}
           </div>
           <div class="p-2.5 sm:p-3 flex-1 flex flex-col">
             <div>
               <p class="font-bold text-gray-800 text-xs sm:text-sm leading-tight line-clamp-1 group-hover:text-blue-600 transition">${p.name}</p>
-              <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5 flex items-center justify-between">
-                <span>${p.unit || 'Pcs'}</span>
-                ${p.addedBy ? `<span class="text-[9px] text-emerald-600 font-semibold truncate max-w-[95px]" title="Ditambahkan oleh: ${p.addedBy}">Oleh: ${p.addedBy}</span>` : ''}
-              </p>
+              <p class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5">${p.unit || 'Pcs'}</p>
             </div>
             <div class="mt-1.5 flex items-center justify-between">
               <p class="text-blue-600 font-extrabold text-xs sm:text-sm">${app.formatT(p.price)}</p>
@@ -425,98 +418,6 @@ let currentKasir = 'Kasir';
     document.getElementById('btn-scan-barcode').addEventListener('click', openScanner);
     document.getElementById('btn-close-scanner').addEventListener('click', closeScanner);
     document.getElementById('close-scanner').addEventListener('click', closeScanner);
-
-    function openAddProductModal() {
-      const modal = document.getElementById('modal-add-product');
-      if (!modal) return;
-      let kasirName = 'Kasir';
-      try {
-        const u = JSON.parse(localStorage.getItem('warung_user') || '{}');
-        if (u.name) kasirName = u.name;
-      } catch(e) {}
-      document.getElementById('add-prod-kasir-sub').textContent = 'Oleh: ' + kasirName;
-      document.getElementById('qp-creator-note').innerHTML = 'Produk ini akan ditandai dengan keterangan: <b>Ditambahkan oleh Kasir (' + kasirName + ')</b>';
-      const catSelect = document.getElementById('qp-cat');
-      catSelect.innerHTML = categories.map((c) => '<option value="' + c.id + '">' + c.name + '</option>').join('');
-      document.getElementById('form-quick-product').reset();
-      document.getElementById('qp-stock').value = 10;
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      lucide.createIcons();
-      setTimeout(() => document.getElementById('qp-name').focus(), 100);
-    }
-
-    function closeAddProductModal() {
-      const modal = document.getElementById('modal-add-product');
-      if (!modal) return;
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    document.getElementById('btn-quick-add-product')?.addEventListener('click', openAddProductModal);
-    document.querySelectorAll('[data-close-prod]').forEach((el) => el.addEventListener('click', closeAddProductModal));
-
-    document.getElementById('qp-price')?.addEventListener('input', function () {
-      this.value = app.escapeInput.toDisplay(this.value);
-    });
-    document.getElementById('qp-modal')?.addEventListener('input', function () {
-      this.value = app.escapeInput.toDisplay(this.value);
-    });
-
-    document.getElementById('form-quick-product')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = document.getElementById('qp-name').value.trim();
-      const catId = document.getElementById('qp-cat').value;
-      const unit = document.getElementById('qp-unit').value;
-      const price = num(document.getElementById('qp-price').value);
-      const stock = parseInt(document.getElementById('qp-stock').value, 10) || 0;
-      const modalVal = num(document.getElementById('qp-modal').value) || Math.round(price * 0.6);
-      const barcode = document.getElementById('qp-barcode').value.trim();
-
-      if (!name) { app.toast('Nama produk wajib diisi.', 'error'); return; }
-      if (price <= 0) { app.toast('Harga jual harus lebih dari 0.', 'error'); return; }
-
-      let kasirName = 'Kasir';
-      try {
-        const u = JSON.parse(localStorage.getItem('warung_user') || '{}');
-        if (u.name) kasirName = u.name;
-      } catch(e) {}
-
-      const payload = {
-        name,
-        categoryId: catId,
-        price,
-        modal: modalVal,
-        stock,
-        unit,
-        barcode,
-        status: 'aktif',
-        emoji: '🛍️',
-        addedBy: 'Kasir (' + kasirName + ')',
-        addedByRole: 'kasir',
-      };
-
-      const btn = document.getElementById('btn-save-quick-prod');
-      btn.disabled = true;
-      btn.textContent = 'Menyimpan...';
-
-      app.post('api/products', payload)
-        .then((res) => {
-          app.toast('Produk berhasil ditambahkan oleh Kasir: ' + res.product.name);
-          closeAddProductModal();
-          return app.get('api/products-full').then((pd) => {
-            products = pd.products;
-            renderProducts();
-            addToCart(res.product.id);
-          });
-        })
-        .catch((err) => app.toast(err.message || 'Gagal menyimpan produk.', 'error'))
-        .finally(() => {
-          btn.disabled = false;
-          btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Tambah ke Kasir</span>';
-          lucide.createIcons();
-        });
-    });
 
     Promise.all([app.get('api/products-full'), app.get('api/categories'), app.get('api/settings')])
       .then(([pd, cd, st]) => {

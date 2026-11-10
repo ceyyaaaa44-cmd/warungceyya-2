@@ -160,10 +160,6 @@
             <div>
               <p class="font-semibold text-gray-800">${p.name}</p>
               <p class="text-xs text-gray-400">${p.unit} · ${p.barcode || 'tanpa barcode'}</p>
-              ${p.addedBy ? `
-              <span class="inline-flex items-center gap-1 mt-1 text-[11px] font-semibold ${p.addedByRole === 'kasir' || p.addedBy.toLowerCase().includes('kasir') ? 'text-emerald-700 bg-emerald-50 border border-emerald-200' : 'text-blue-700 bg-blue-50 border border-blue-200'} px-2 py-0.5 rounded-md">
-                <i data-lucide="user-check" class="w-3 h-3"></i> Ditambahkan oleh: ${p.addedBy}
-              </span>` : ''}
             </div>
           </div>
         </td>
