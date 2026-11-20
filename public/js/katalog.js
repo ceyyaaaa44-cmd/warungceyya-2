@@ -254,16 +254,69 @@
 
     if (window.lucide) lucide.createIcons();
 
-    // Attach click events to "Tambah ke Keranjang"
+    // Attach click events to "Pesan" - Menampilkan pilihan 2 opsi
     grid.querySelectorAll('.btn-add-cart').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         const prod = allProducts.find((x) => x.id === id);
         if (prod) {
-          addToCart(prod);
+          openProductOptionModal(prod);
         }
       });
     });
+  }
+
+  // ------------------------- 2B. PRODUCT OPTION MODAL (2 OPSI PESANAN) -------------------------
+  let selectedOptionProduct = null;
+  let selectedOptionQty = 1;
+
+  function updateOptionSubtotal() {
+    const qtyEl = document.getElementById('opt-qty-value');
+    const subtotalEl = document.getElementById('opt-subtotal');
+    if (qtyEl) qtyEl.textContent = selectedOptionQty;
+    if (subtotalEl && selectedOptionProduct) {
+      const subtotal = selectedOptionProduct.price * selectedOptionQty;
+      subtotalEl.textContent = `Total: ${formatRp(subtotal)}`;
+    }
+  }
+
+  function openProductOptionModal(product) {
+    selectedOptionProduct = product;
+    selectedOptionQty = 1;
+
+    const modal = document.getElementById('product-option-modal');
+    const imgWrap = document.getElementById('opt-product-img-wrap');
+    const nameEl = document.getElementById('opt-product-name');
+    const catEl = document.getElementById('opt-product-category');
+    const priceEl = document.getElementById('opt-product-price');
+
+    if (!modal) return;
+
+    if (nameEl) nameEl.textContent = product.name;
+    if (catEl) {
+      catEl.textContent = product.category || 'Menu';
+      catEl.style.backgroundColor = product.categoryColor || '#f97316';
+    }
+    if (priceEl) priceEl.textContent = `${formatRp(product.price)} / ${product.unit || 'Pcs'}`;
+
+    if (imgWrap) {
+      if (product.image) {
+        imgWrap.innerHTML = `<img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<span class=\\'text-3xl\\'>${product.emoji || '🛍️'}</span>';" />`;
+      } else {
+        imgWrap.innerHTML = `<span class="text-3xl">${product.emoji || '🛍️'}</span>`;
+      }
+    }
+
+    updateOptionSubtotal();
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeProductOptionModal() {
+    const modal = document.getElementById('product-option-modal');
+    if (modal) modal.classList.add('hidden');
+    selectedOptionProduct = null;
+    selectedOptionQty = 1;
   }
 
   // ------------------------- 3. CART SYSTEM -------------------------
@@ -281,10 +334,11 @@
     } catch (e) {}
   }
 
-  function addToCart(product) {
+  function addToCart(product, qty = 1, showFeedback = true) {
+    const quantity = Math.max(1, parseInt(qty, 10) || 1);
     const existing = cart.find((it) => it.id === product.id);
     if (existing) {
-      existing.qty += 1;
+      existing.qty += quantity;
     } else {
       cart.push({
         id: product.id,
@@ -293,12 +347,14 @@
         emoji: product.emoji || '🛍️',
         image: product.image || '',
         unit: product.unit || 'Pcs',
-        qty: 1,
+        qty: quantity,
       });
     }
     saveCartToStorage();
     renderCart();
-    showToast(`✓ "${product.name}" ditambahkan ke keranjang`);
+    if (showFeedback) {
+      showToast(`✓ "${product.name}" (${quantity} ${product.unit || 'item'}) masuk keranjang`);
+    }
   }
 
   function updateCartQty(id, delta) {
@@ -1217,6 +1273,53 @@
           }).catch(() => {
             showToast('Nomor pesanan: ' + idEl.textContent);
           });
+        }
+      });
+    }
+
+    // Product Option Modal (2 Opsi: Keranjang vs Langsung Pesan)
+    const btnCloseOptModal = document.getElementById('btn-close-product-option-modal');
+    const optModal = document.getElementById('product-option-modal');
+    const btnOptMinus = document.getElementById('btn-opt-qty-minus');
+    const btnOptPlus = document.getElementById('btn-opt-qty-plus');
+    const btnOptAddToCart = document.getElementById('btn-opt-add-to-cart');
+    const btnOptOrderNow = document.getElementById('btn-opt-order-now');
+
+    if (btnCloseOptModal) btnCloseOptModal.addEventListener('click', closeProductOptionModal);
+    if (optModal) {
+      optModal.addEventListener('click', (e) => {
+        if (e.target === optModal) closeProductOptionModal();
+      });
+    }
+    if (btnOptMinus) {
+      btnOptMinus.addEventListener('click', () => {
+        if (selectedOptionQty > 1) {
+          selectedOptionQty -= 1;
+          updateOptionSubtotal();
+        }
+      });
+    }
+    if (btnOptPlus) {
+      btnOptPlus.addEventListener('click', () => {
+        selectedOptionQty += 1;
+        updateOptionSubtotal();
+      });
+    }
+    if (btnOptAddToCart) {
+      btnOptAddToCart.addEventListener('click', () => {
+        if (selectedOptionProduct) {
+          addToCart(selectedOptionProduct, selectedOptionQty, true);
+          closeProductOptionModal();
+        }
+      });
+    }
+    if (btnOptOrderNow) {
+      btnOptOrderNow.addEventListener('click', () => {
+        if (selectedOptionProduct) {
+          addToCart(selectedOptionProduct, selectedOptionQty, false);
+          closeProductOptionModal();
+          toggleCart(true);
+          showToast(`🛒 Silakan lengkapi pesanan Anda`);
         }
       });
     }
