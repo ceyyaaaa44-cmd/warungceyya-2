@@ -70,27 +70,78 @@
     `;
   }
 
+  function createCardHTML(o) {
+    const dateFormatted = new Date(o.createdAt).toLocaleDateString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    const isWebOrder = o.channel === 'web' || (o.kasir && o.kasir.includes('Web'));
+    const kasirDisplay = isWebOrder 
+      ? `<span class="inline-flex items-center gap-1 text-orange-600 font-semibold text-xs"><i data-lucide="globe" class="w-3.5 h-3.5"></i> ${o.kasir}</span>`
+      : `<span class="text-xs text-gray-700">${o.kasir}</span>`;
+
+    return `
+      <div class="p-3.5 bg-white rounded-xl border border-gray-100 shadow-2xs space-y-2.5" id="card-${o.id}">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="font-extrabold text-gray-900 text-sm tracking-tight">${o.id}</span>
+            <p class="text-[11px] text-gray-400 mt-0.5">${dateFormatted}</p>
+          </div>
+          ${statusBadge(o.status)}
+        </div>
+
+        <div class="flex items-center justify-between py-1.5 px-2 bg-gray-50/80 rounded-lg text-xs">
+          <div class="flex items-center gap-1 text-gray-500">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold">Kasir:</span>
+            ${kasirDisplay}
+          </div>
+          ${methodBadge(o.method || o.paymentMethod)}
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <p class="text-[10px] text-gray-400 font-semibold uppercase">Total</p>
+            <p class="text-sm font-extrabold text-blue-600">${app.formatT(o.total)}</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button data-detail="${o.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition active:scale-95">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i> Detail
+            </button>
+            <button data-print="${o.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition active:scale-95">
+              <i data-lucide="printer" class="w-3.5 h-3.5"></i> Cetak
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderTable() {
     const tbody = document.getElementById('ri-rows');
-    if (!tbody) return;
+    const cardsContainer = document.getElementById('ri-cards');
 
     if (!orders.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-16 text-center"><div class="text-4xl mb-3">🧾</div><p class="font-semibold text-gray-700">Belum ada riwayat transaksi</p><p class="text-xs text-gray-400 mt-1">Transaksi yang masuk akan otomatis tampil di sini.</p></td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-16 text-center"><div class="text-4xl mb-3">🧾</div><p class="font-semibold text-gray-700">Belum ada riwayat transaksi</p><p class="text-xs text-gray-400 mt-1">Transaksi yang masuk akan otomatis tampil di sini.</p></td></tr>';
+      if (cardsContainer) cardsContainer.innerHTML = '<div class="py-12 px-4 text-center bg-gray-50/60 rounded-xl"><div class="text-3xl mb-2">🧾</div><p class="font-bold text-sm text-gray-700">Belum ada riwayat transaksi</p><p class="text-xs text-gray-400 mt-1">Transaksi akan muncul di sini.</p></div>';
       return;
     }
 
-    tbody.innerHTML = orders.map(createRowHTML).join('');
+    if (tbody) tbody.innerHTML = orders.map(createRowHTML).join('');
+    if (cardsContainer) cardsContainer.innerHTML = orders.map(createCardHTML).join('');
+
     if (window.lucide) lucide.createIcons();
 
-    tbody.querySelectorAll('[data-detail]').forEach((b) => {
+    // Attach click listeners for both table rows and cards
+    document.querySelectorAll('[data-detail]').forEach((b) => {
       b.onclick = () => openDetail(b.dataset.detail);
     });
-    tbody.querySelectorAll('[data-print]').forEach((b) => {
+    document.querySelectorAll('[data-print]').forEach((b) => {
       b.onclick = () => printOrder(b.dataset.print);
     });
 
     const scrollContainer = document.getElementById('table-scroll-container');
     if (scrollContainer) scrollContainer.scrollTop = 0;
+    if (cardsContainer) cardsContainer.scrollTop = 0;
   }
 
   function updatePaginationControls() {

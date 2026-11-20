@@ -213,13 +213,13 @@
         : `<div class="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-tr from-amber-50 to-orange-100 group-hover:scale-110 transition duration-300">${p.emoji || '🛍️'}</div>`;
 
       return `
-        <div class="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-3 sm:p-4 flex flex-col justify-between shadow-xs hover:shadow-lg transition duration-200 hover:-translate-y-1">
+        <div class="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-2.5 sm:p-4 flex flex-col justify-between shadow-xs hover:shadow-lg transition duration-200 hover:-translate-y-1">
           <div>
             <!-- Image Wrap -->
-            <div class="relative w-full h-36 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center mb-3">
+            <div class="relative w-full h-32 sm:h-44 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center mb-2 sm:mb-3">
               ${imageHtml}
-              <div class="absolute top-2 left-2">
-                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold text-white shadow-xs backdrop-blur-md" style="background-color: ${p.categoryColor || '#f97316'}">
+              <div class="absolute top-1.5 left-1.5 sm:top-2 sm:left-2">
+                <span class="px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-md sm:rounded-lg text-[9px] sm:text-[10px] font-bold text-white shadow-xs backdrop-blur-md" style="background-color: ${p.categoryColor || '#f97316'}">
                   ${p.category || 'Menu'}
                 </span>
               </div>
@@ -227,23 +227,23 @@
 
             <!-- Title & Details -->
             <div class="flex items-start justify-between gap-1 mb-1">
-              <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">${p.name}</h3>
+              <h3 class="font-bold text-slate-900 text-xs sm:text-base leading-snug line-clamp-2">${p.name}</h3>
             </div>
             
-            <div class="flex items-center justify-between gap-1 mb-3">
-              <span class="text-xs text-slate-500 font-medium">per ${p.unit || 'Pcs'}</span>
+            <div class="flex items-center justify-between gap-1 mb-2 sm:mb-3">
+              <span class="text-[11px] sm:text-xs text-slate-500 font-medium">per ${p.unit || 'Pcs'}</span>
               ${stockBadge}
             </div>
           </div>
 
           <!-- Price & Add to Cart Action -->
-          <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 sm:gap-2">
             <div>
-              <p class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Harga</p>
-              <p class="text-sm sm:text-base font-extrabold text-orange-600">${formatRp(p.price)}</p>
+              <p class="text-[9px] sm:text-[10px] text-slate-400 font-medium uppercase tracking-wider">Harga</p>
+              <p class="text-xs sm:text-base font-extrabold text-orange-600">${formatRp(p.price)}</p>
             </div>
 
-            <button type="button" class="btn-add-cart ${isAvailable ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/25 active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5" data-id="${p.id}" ${!isAvailable ? 'disabled' : ''}>
+            <button type="button" class="btn-add-cart ${isAvailable ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/25 active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 sm:gap-1.5" data-id="${p.id}" ${!isAvailable ? 'disabled' : ''}>
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
               <span class="hidden sm:inline">Pesan</span>
             </button>
@@ -319,6 +319,9 @@
     const container = document.getElementById('cart-items-container');
     const summaryItems = document.getElementById('cart-summary-items');
     const summaryTotal = document.getElementById('cart-summary-total');
+    const mobileCartBar = document.getElementById('mobile-cart-bar');
+    const mobileCartCount = document.getElementById('mobile-cart-count');
+    const mobileCartTotal = document.getElementById('mobile-cart-total');
 
     const totalQty = cart.reduce((acc, it) => acc + it.qty, 0);
     const totalPrice = cart.reduce((acc, it) => acc + (it.price * it.qty), 0);
@@ -327,6 +330,17 @@
     if (drawerCount) drawerCount.textContent = `${totalQty} item dipilih`;
     if (summaryItems) summaryItems.textContent = `${totalQty} item`;
     if (summaryTotal) summaryTotal.textContent = formatRp(totalPrice);
+
+    // Update floating mobile cart bar
+    if (mobileCartCount) mobileCartCount.textContent = totalQty;
+    if (mobileCartTotal) mobileCartTotal.textContent = formatRp(totalPrice);
+    if (mobileCartBar) {
+      if (totalQty > 0) {
+        mobileCartBar.classList.remove('hidden');
+      } else {
+        mobileCartBar.classList.add('hidden');
+      }
+    }
 
     if (!container) return;
 
@@ -1139,12 +1153,14 @@
 
     // Cart Drawer Toggle
     const btnOpenCart = document.getElementById('btn-open-cart');
+    const btnMobileOpenCart = document.getElementById('btn-mobile-open-cart');
     const btnCloseCart = document.getElementById('btn-close-cart');
     const cartOverlay = document.getElementById('cart-drawer-overlay');
     const btnSubmitOrder = document.getElementById('btn-submit-order');
     const btnSubmitWebOrder = document.getElementById('btn-submit-web-order');
 
     if (btnOpenCart) btnOpenCart.addEventListener('click', () => toggleCart(true));
+    if (btnMobileOpenCart) btnMobileOpenCart.addEventListener('click', () => toggleCart(true));
     if (btnCloseCart) btnCloseCart.addEventListener('click', () => toggleCart(false));
     if (cartOverlay) {
       cartOverlay.addEventListener('click', (e) => {
