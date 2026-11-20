@@ -25,6 +25,301 @@ function requireAuth(req, res, next) {
   next();
 }
 
+/* ----------------------- public customer endpoints ----------------------- */
+
+app.get(['/katalog', '/menu', '/belanja', '/toko'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'katalog.html'));
+});
+
+// Profil informasi toko untuk pelanggan (bebas dari data rahasia internal)
+app.get('/api/public/store', async (req, res) => {
+  await db.syncSettings();
+  const s = db.getDB().settings || {};
+  res.json({
+    storeName: s.storeName || 'Warung Cemilan',
+    tagline: s.tagline || 'Aneka makanan & minuman segar',
+    address: s.address || '',
+    phone: s.phone || '',
+    logo: s.logo || '🏪'
+  });
+});
+
+// Daftar kategori produk untuk pelanggan
+app.get('/api/public/categories', async (req, res) => {
+  await db.syncCollection('categories');
+  const list = (db.getDB().categories || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    icon: c.icon || '🗂️',
+    color: c.color || '#64748b'
+  }));
+  res.json({ categories: list });
+});
+
+// Katalog produk untuk pelanggan (hanya produk aktif, tanpa harga modal/HPP/margin keuntungan)
+app.get('/api/public/products', async (req, res) => {
+  await Promise.all([db.syncCollection('products'), db.syncCollection('categories')]);
+  const { q, catId } = req.query;
+  let list = (db.getDB().products || []).filter((p) => p.status === 'aktif');
+  const toys = (s) => String(s || '').toLowerCase();
+  if (q) {
+    const needle = toys(q);
+    list = list.filter((p) => toys(p.name).includes(needle));
+  }
+  if (catId && catId !== 'Semua') {
+    list = list.filter((p) => p.categoryId === catId);
+  }
+  res.json({ products: list.map(db.customerProduct) });
+});
+
+// Ulasan untuk toko: lihat review pelanggan & statistik rating
+app.get('/api/public/reviews', async (req, res) => {
+  await db.syncCollection('reviews');
+  if (db.ensureReviews) db.ensureReviews();
+  const reviews = (db.getDB().reviews || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const total = reviews.length;
+  const sum = reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+  const avg = total > 0 ? (sum / total) : 5;
+  const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  reviews.forEach((r) => {
+    const star = Math.min(5, Math.max(1, Math.round(Number(r.rating) || 5)));
+    counts[star] = (counts[star] || 0) + 1;
+  });
+  res.json({
+    reviews,
+    stats: {
+      average: Math.round(avg * 10) / 10,
+      total,
+      counts
+    }
+  });
+});
+
+// Kirim ulasan toko oleh pelanggan
+app.post('/api/public/reviews', async (req, res) => {
+  const { name, rating, comment } = req.body || {};
+  const cleanName = String(name || '').trim();
+  const cleanComment = String(comment || '').trim();
+  const numRating = parseInt(rating, 10);
+
+  if (!cleanName || cleanName.length < 2) {
+    return res.status(400).json({ error: 'Nama minimal 2 karakter.' });
+  }
+  if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+    return res.status(400).json({ error: 'Rating harus antara 1 sampai 5 bintang.' });
+  }
+  if (!cleanComment || cleanComment.length < 3) {
+    return res.status(400).json({ error: 'Ulasan minimal 3 karakter.' });
+  }
+
+  const review = {
+    id: db.uid('rev_'),
+    name: cleanName.slice(0, 50),
+    rating: numRating,
+    comment: cleanComment.slice(0, 500),
+    createdAt: db.now()
+  };
+
+  if (!Array.isArray(db.getDB().reviews)) {
+    db.getDB().reviews = [];
+  }
+  db.getDB().reviews.push(review);
+  await db.addDoc('reviews', review);
+  res.status(201).json({ review });
+});
+
+// Buat pesanan langsung dari web oleh pelanggan
+app.post('/api/public/orders', async (req, res) => {
+  await Promise.all([db.syncSettings(), db.syncCollection('products'), db.syncCollection('orders')]);
+  const d = db.getDB();
+  const { customerName, customerPhone, deliveryMethod, address, paymentMethod, notes, items } = req.body || {};
+
+  const cleanName = String(customerName || '').trim();
+  const cleanPhone = String(customerPhone || '').replace(/[^0-9+\s-]/g, '').trim();
+  const cleanMethod = deliveryMethod === 'Antar / Kirim' ? 'Antar / Kirim' : 'Ambil di Warung';
+  const cleanAddress = cleanMethod === 'Antar / Kirim' ? String(address || '').trim() : '';
+  const ALLOWED_PAYMENT = ['QRIS', 'Transfer', 'Tunai'];
+  const cleanPayment = ALLOWED_PAYMENT.includes(paymentMethod) ? paymentMethod : 'QRIS';
+  const cleanNotes = String(notes || '').trim().slice(0, 300);
+
+  if (!cleanName || cleanName.length < 2) {
+    return res.status(400).json({ error: 'Nama pemesan minimal 2 karakter.' });
+  }
+  if (!cleanPhone || cleanPhone.length < 8) {
+    return res.status(400).json({ error: 'Nomor WhatsApp / HP tidak valid (minimal 8 angka).' });
+  }
+  if (cleanMethod === 'Antar / Kirim' && (!cleanAddress || cleanAddress.length < 5)) {
+    return res.status(400).json({ error: 'Alamat pengantaran wajib diisi lengkap.' });
+  }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Keranjang pesanan masih kosong.' });
+  }
+
+  const cleanedItems = [];
+  let subtotal = 0;
+
+  for (const it of items) {
+    const prod = d.products.find((p) => p.id === it.productId && p.status === 'aktif');
+    if (!prod) {
+      return res.status(400).json({ error: 'Produk tidak ditemukan atau sudah tidak aktif.' });
+    }
+    const qty = parseInt(it.qty, 10);
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ error: `Jumlah pesanan untuk ${prod.name} tidak valid.` });
+    }
+    if (prod.stock < qty) {
+      return res.status(400).json({ error: `Stok ${prod.name} tidak mencukupi (sisa ${prod.stock}).` });
+    }
+
+    const itemTotal = prod.price * qty;
+    cleanedItems.push({
+      productId: prod.id,
+      productName: prod.name,
+      productEmoji: prod.emoji || '🛍️',
+      qty,
+      price: prod.price,
+      modal: prod.modal || Math.round(prod.price * 0.6),
+      total: itemTotal,
+    });
+    subtotal += itemTotal;
+  }
+
+  const orderId = db.nextInvoiceNo();
+  const now = db.now();
+
+  const order = {
+    id: orderId,
+    channel: 'web',
+    customerName: cleanName,
+    customerPhone: cleanPhone,
+    deliveryMethod: cleanMethod,
+    address: cleanAddress,
+    paymentMethod: cleanPayment,
+    method: cleanPayment,
+    notes: cleanNotes,
+    items: cleanedItems,
+    subtotal,
+    discount: 0,
+    taxRate: 0,
+    tax: 0,
+    total: subtotal,
+    paid: cleanPayment === 'Tunai' ? 0 : subtotal,
+    change: 0,
+    status: 'Pesanan Baru (Web)',
+    kasir: `Web (${cleanName})`,
+    createdAt: now,
+  };
+
+  d.orders.unshift(order);
+
+  // Potong stok dan simpan
+  const saves = [db.addDoc('orders', order), db.saveSettings()];
+  const stockEntries = [];
+  const txEntries = [];
+
+  cleanedItems.forEach((it) => {
+    const prod = d.products.find((x) => x.id === it.productId);
+    if (prod) {
+      prod.stock = Math.max(0, prod.stock - it.qty);
+      prod.updatedAt = now;
+      saves.push(db.updateDoc('products', prod.id, prod));
+
+      const stk = {
+        id: db.uid('stk_'),
+        productId: it.productId,
+        productName: it.productName,
+        productEmoji: it.productEmoji,
+        type: 'keluar',
+        qty: it.qty,
+        reason: 'Pesanan Web ' + order.id,
+        user: `Web (${cleanName})`,
+        createdAt: now,
+      };
+      stockEntries.push(stk);
+      d.stockHistory.unshift(stk);
+      saves.push(db.addDoc('stockHistory', stk));
+    }
+
+    const tx = {
+      id: db.uid('trx_'),
+      invoiceNo: order.id,
+      productId: it.productId,
+      productName: it.productName,
+      productEmoji: it.productEmoji,
+      qty: it.qty,
+      price: it.price,
+      modal: it.modal,
+      total: it.total,
+      status: 'Lunas',
+      method: cleanPayment,
+      kasir: `Web (${cleanName})`,
+      createdAt: now,
+    };
+    txEntries.push(tx);
+    d.transactions.unshift(tx);
+    saves.push(db.addDoc('transactions', tx));
+  });
+
+  await Promise.all(saves);
+
+  // Kirim data pesanan yang aman untuk pelanggan (tanpa modal)
+  res.status(201).json({
+    ok: true,
+    order: {
+      id: order.id,
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      deliveryMethod: order.deliveryMethod,
+      address: order.address,
+      paymentMethod: order.paymentMethod,
+      notes: order.notes,
+      items: order.items.map((it) => ({
+        productName: it.productName,
+        productEmoji: it.productEmoji,
+        qty: it.qty,
+        price: it.price,
+        total: it.total,
+      })),
+      total: order.total,
+      status: order.status,
+      createdAt: order.createdAt,
+    },
+    store: {
+      storeName: d.settings.storeName,
+      phone: d.settings.phone,
+      address: d.settings.address,
+    }
+  });
+});
+
+// Cek status pesanan oleh pelanggan berdasarkan ID Pesanan
+app.get('/api/public/orders/:id', async (req, res) => {
+  await db.syncCollection('orders');
+  const o = db.getDB().orders.find((x) => x.id.toLowerCase() === req.params.id.toLowerCase());
+  if (!o) return res.status(404).json({ error: 'Nomor pesanan tidak ditemukan.' });
+
+  res.json({
+    order: {
+      id: o.id,
+      customerName: o.customerName || (o.kasir && o.kasir.includes('Web') ? o.kasir : 'Pelanggan'),
+      deliveryMethod: o.deliveryMethod || 'Ambil di Warung',
+      address: o.address || '',
+      paymentMethod: o.paymentMethod || o.method,
+      notes: o.notes || '',
+      items: (o.items || []).map((it) => ({
+        productName: it.productName,
+        productEmoji: it.productEmoji,
+        qty: it.qty,
+        price: it.price,
+        total: it.total,
+      })),
+      total: o.total,
+      status: o.status,
+      createdAt: o.createdAt,
+    }
+  });
+});
+
 /* ------------------------------ settings ------------------------------ */
 
 app.get('/api/db-status', (req, res) => {
@@ -330,14 +625,33 @@ app.get('/api/stok', async (req, res) => {
 app.get('/api/orders', async (req, res) => {
   await db.syncCollection('orders');
   let list = db.getDB().orders.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const { q } = req.query;
+  const { q, method, status } = req.query;
   if (q) {
     const needle = String(q).toLowerCase();
-    list = list.filter((o) => o.id.toLowerCase().includes(needle) || o.kasir.toLowerCase().includes(needle));
+    list = list.filter((o) =>
+      o.id.toLowerCase().includes(needle) ||
+      (o.kasir && o.kasir.toLowerCase().includes(needle)) ||
+      (o.customerName && o.customerName.toLowerCase().includes(needle))
+    );
   }
-  const { page = 1, limit = 50 } = req.query;
-  const start = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-  res.json({ orders: list.slice(start, start + parseInt(limit, 10)), total: list.length });
+  if (method && method !== 'Semua') {
+    list = list.filter((o) => o.method === method || o.paymentMethod === method);
+  }
+  if (status && status !== 'Semua') {
+    list = list.filter((o) => o.status === status);
+  }
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.max(1, parseInt(req.query.limit, 10) || 15);
+  const start = (page - 1) * limit;
+  const total = list.length;
+  const paged = list.slice(start, start + limit);
+  res.json({
+    orders: paged,
+    total,
+    page,
+    limit,
+    hasMore: start + limit < total,
+  });
 });
 
 app.get('/api/orders/:id', async (req, res) => {
@@ -757,9 +1071,11 @@ async function start() {
 
 if (process.env.VERCEL) {
   module.exports = (async () => { await db.load(); return app; })();
-} else {
+} else if (require.main === module) {
   start().catch((err) => {
     console.error('[Startup] Failed to start:', err.message);
     process.exit(1);
   });
+} else {
+  module.exports = app;
 }

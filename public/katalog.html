@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Katalog & Layanan Pelanggan — Warung Cemilan</title>
+  <script>
+    (function() {
+      const _warn = console.warn;
+      console.warn = function(...args) {
+        if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+        _warn.apply(console, args);
+      };
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+    .star-rating i { cursor: pointer; transition: transform 0.15s ease, color 0.15s ease; }
+    .star-rating i:hover { transform: scale(1.2); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
+
+  <!-- ================= TOP NOTIFICATION / PROMO BAR ================= -->
+  <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-semibold py-2 px-4 text-center flex items-center justify-center gap-2 shadow-sm">
+    <span class="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Info Warung
+    </span>
+    <span>Selamat datang di katalog resmi kami! Pesan praktis langsung lewat WhatsApp atau datang langsung ke warung.</span>
+  </div>
+
+  <!-- ================= HEADER & NAVBAR ================= -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition-all duration-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20 gap-4">
+        
+        <!-- Store Brand -->
+        <a href="#katalog" class="flex items-center gap-3 group">
+          <div id="store-logo-wrap" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center text-2xl shadow-md shadow-orange-500/20 group-hover:scale-105 transition transform">
+            <span id="store-logo">🏪</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="store-name" class="font-bold text-lg sm:text-xl text-slate-900 tracking-tight leading-none">Warung Cemilan</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Buka
+              </span>
+            </div>
+            <p id="store-tagline" class="text-xs text-slate-500 truncate max-w-[200px] sm:max-w-xs mt-0.5">Aneka cemilan gurih, manis & minuman segar</p>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Tabs -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 text-sm font-medium text-slate-600">
+          <a href="#katalog" class="nav-tab px-4 py-2 rounded-xl text-slate-900 font-semibold bg-white shadow-sm flex items-center gap-2 transition" data-target="katalog">
+            <i data-lucide="utensils" class="w-4 h-4 text-amber-500"></i>
+            <span>Produk</span>
+          </a>
+          <a href="#cara-transaksi" class="nav-tab px-4 py-2 rounded-xl hover:text-slate-900 flex items-center gap-2 transition" data-target="cara-transaksi">
+            <i data-lucide="credit-card" class="w-4 h-4 text-slate-400"></i>
+            <span>Cara Transaksi</span>
+          </a>
+          <a href="#ulasan" class="nav-tab px-4 py-2 rounded-xl hover:text-slate-900 flex items-center gap-2 transition" data-target="ulasan">
+            <i data-lucide="star" class="w-4 h-4 text-slate-400"></i>
+            <span>Ulasan Toko</span>
+            <span id="nav-review-badge" class="px-1.5 py-0.2 rounded-full text-[11px] bg-amber-100 text-amber-800 font-bold">4.9 ★</span>
+          </a>
+        </nav>
+
+        <!-- Right Action: Cart & Login link -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Button Lacak Pesanan -->
+          <button type="button" id="btn-open-track" class="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 transition" title="Cek status pesanan Anda">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-orange-500"></i>
+            <span class="hidden sm:inline">Lacak Pesanan</span>
+          </button>
+
+          <!-- Cart Button -->
+          <button type="button" id="btn-open-cart" class="relative flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/25 transition transform active:scale-95">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Keranjang</span>
+            <span id="cart-badge" class="bg-white text-orange-600 text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">0</span>
+          </button>
+
+          <!-- Discreet Staff Link -->
+          <a href="index.html" title="Masuk Area Kasir / Admin" class="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium flex items-center gap-1.5 transition">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span class="hidden lg:inline">Area Kasir</span>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Mobile Navigation Bar -->
+      <div class="md:hidden flex items-center justify-around border-t border-slate-100 py-2.5 text-xs font-semibold text-slate-600">
+        <a href="#katalog" class="mobile-nav-link flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-amber-600 bg-amber-50 font-bold" data-target="katalog">
+          <i data-lucide="utensils" class="w-4 h-4"></i>
+          <span>Produk</span>
+        </a>
+        <a href="#cara-transaksi" class="mobile-nav-link flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-slate-600" data-target="cara-transaksi">
+          <i data-lucide="credit-card" class="w-4 h-4"></i>
+          <span>Transaksi</span>
+        </a>
+        <a href="#ulasan" class="mobile-nav-link flex items-center gap-1.5 py-1 px-2.5 rounded-lg text-slate-600" data-target="ulasan">
+          <i data-lucide="star" class="w-4 h-4"></i>
+          <span>Ulasan</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= HERO BANNER ================= -->
+  <section class="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-b border-orange-100/70 py-10 sm:py-14">
+    <div class="absolute -right-16 -top-16 w-64 h-64 bg-amber-200/40 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-orange-200/40 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white shadow-sm border border-orange-200 text-orange-700 text-xs font-bold mb-4">
+          <i data-lucide="award" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Kualitas Terjamin & Bahan Pilihan</span>
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          Cemilan Lezat & Minuman Segar Siap Menemani Harimu!
+        </h1>
+        <p class="mt-3 sm:mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl">
+          Jelajahi menu favorit kami, pilih pesananmu, dan lakukan pemesanan secara praktis lewat WhatsApp atau datang langsung ke gerai kami.
+        </p>
+
+        <!-- Quick Info Badges -->
+        <div class="mt-6 flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-700 font-medium">
+          <div class="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+            <i data-lucide="map-pin" class="w-4 h-4 text-rose-500 shrink-0"></i>
+            <span id="hero-address" class="truncate max-w-[240px]">Jl. Contoh No. 88</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+            <i data-lucide="phone" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+            <span id="hero-phone">0812-3456-7890</span>
+          </div>
+          <div class="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500 shrink-0"></i>
+            <span>Dukung QRIS, Tunai & Transfer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-16">
+
+    <!-- ================= SECTION 1: KATALOG PRODUK ================= -->
+    <section id="katalog" class="scroll-mt-24 space-y-6">
+      
+      <!-- Section Header & Filter Controls -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-6 rounded-full bg-gradient-to-b from-amber-500 to-orange-500"></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Katalog Produk</h2>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">Pilih cemilan dan minuman favorit Anda dengan harga ramah di kantong.</p>
+        </div>
+
+        <!-- Search Input -->
+        <div class="w-full md:w-72 relative">
+          <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </span>
+          <input type="text" id="search-input" placeholder="Cari nama makanan / cemilan..." class="w-full pl-10 pr-9 py-2.5 bg-white rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 text-sm outline-none transition shadow-xs" />
+          <button type="button" id="btn-clear-search" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs font-semibold" id="category-pills">
+        <button type="button" class="cat-pill active px-4 py-2 rounded-xl bg-orange-500 text-white shadow-sm shadow-orange-500/20 whitespace-nowrap transition" data-cat="Semua">
+          Semua Produk
+        </button>
+        <!-- Dynamic Category Pills inserted by JS -->
+      </div>
+
+      <!-- Products Grid -->
+      <div id="products-loading" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 py-6">
+        <!-- Skeleton loaders -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 animate-pulse">
+          <div class="h-36 sm:h-44 bg-slate-100 rounded-xl"></div>
+          <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+          <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 animate-pulse">
+          <div class="h-36 sm:h-44 bg-slate-100 rounded-xl"></div>
+          <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+          <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 animate-pulse">
+          <div class="h-36 sm:h-44 bg-slate-100 rounded-xl"></div>
+          <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+          <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 animate-pulse">
+          <div class="h-36 sm:h-44 bg-slate-100 rounded-xl"></div>
+          <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+          <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+        </div>
+      </div>
+
+      <div id="products-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Dynamic Product Cards inserted by JS -->
+      </div>
+
+      <!-- Empty State for Products -->
+      <div id="products-empty" class="hidden text-center py-16 px-4 bg-white rounded-3xl border border-slate-200">
+        <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-3xl mx-auto mb-3">
+          🔍
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Produk Tidak Ditemukan</h3>
+        <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Tidak ada produk yang cocok dengan pencarian atau filter yang Anda pilih.</p>
+        <button type="button" id="btn-reset-filter" class="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+          Reset Filter & Tampilkan Semua
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ================= SECTION 2: CARA TRANSAKSI ================= -->
+    <section id="cara-transaksi" class="scroll-mt-24 space-y-8">
+      
+      <div class="text-center max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold mb-2">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+          <span>Panduan Pelanggan</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Cara Transaksi & Pemesanan</h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1.5">
+          Proses pemesanan mudah, cepat, dan transparan. Anda dapat memilih metode pembayaran dan pengambilan yang paling nyaman.
+        </p>
+      </div>
+
+      <!-- 4 Langkah Transaksi Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Step 1 -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-md transition relative flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center font-black text-xl mb-4">
+              1
+            </div>
+            <h3 class="text-base font-bold text-slate-900 mb-2">Pilih Produk</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Jelajahi katalog di halaman ini. Klik tombol <span class="font-semibold text-orange-600">+ Tambah</span> pada produk makanan atau minuman yang Anda inginkan.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] font-semibold text-amber-700">
+            <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+            <span>Keranjang Belanja Otomatis</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-md transition relative flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center font-black text-xl mb-4">
+              2
+            </div>
+            <h3 class="text-base font-bold text-slate-900 mb-2">Konfirmasi Pesanan</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Buka keranjang belanja, isi nama Anda, pilih opsi <em>Ambil di Warung</em> atau <em>Kirim/Antar</em>, lalu klik tombol pesan untuk kirim ke WhatsApp toko.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] font-semibold text-orange-700">
+            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+            <span>Format Pesan Rapi Otomatis</span>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-md transition relative flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-black text-xl mb-4">
+              3
+            </div>
+            <h3 class="text-base font-bold text-slate-900 mb-2">Metode Pembayaran</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Toko mendukung pembayaran fleksibel: <strong>QRIS</strong> (GoPay, OVO, Dana, BCA, dll.), <strong>Transfer Bank</strong>, atau <strong>Tunai/Cash</strong> di kasir.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] font-semibold text-emerald-700">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+            <span>QRIS Semua Bank & E-Wallet</span>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-md transition relative flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center font-black text-xl mb-4">
+              4
+            </div>
+            <h3 class="text-base font-bold text-slate-900 mb-2">Ambil / Siap Santap</h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Pesanan Anda disiapkan higienis dan hangat. Anda dapat langsung mengambilnya tanpa antre lama atau menunggu kurir tiba di alamat Anda.
+            </p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-[11px] font-semibold text-indigo-700">
+            <i data-lucide="smile" class="w-3.5 h-3.5"></i>
+            <span>Cepat, Hangat & Higienis</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Payment & Store Highlight Banner -->
+      <div class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6">
+        <div class="space-y-3 max-w-xl text-center lg:text-left">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-semibold">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>Transaksi 100% Aman & Terpercaya</span>
+          </div>
+          <h3 class="text-xl sm:text-2xl font-bold tracking-tight">Butuh Bantuan atau Mau Pesan Langsung?</h3>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Kasir dan layanan pelanggan kami siap membantu pertanyaan seputar menu, ketersediaan stok, pesanan jumlah banyak (catering/acara), maupun konfirmasi transfer.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <a href="#" id="btn-direct-wa" target="_blank" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span>Chat WhatsApp Kasir</span>
+          </a>
+          <a href="#katalog" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm flex items-center justify-center gap-2 border border-white/20 transition">
+            <i data-lucide="arrow-up" class="w-4 h-4"></i>
+            <span>Lihat Menu Lagi</span>
+          </a>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= SECTION 3: ULASAN TOKO ================= -->
+    <section id="ulasan" class="scroll-mt-24 space-y-8">
+      
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-6 rounded-full bg-gradient-to-b from-amber-500 to-yellow-500"></span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Ulasan & Rating Toko</h2>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">Pengalaman nyata dari para pelanggan setia Warung Cemilan.</p>
+        </div>
+
+        <button type="button" id="btn-open-review-modal" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md shadow-amber-500/25 transition transform active:scale-95">
+          <i data-lucide="edit-3" class="w-4 h-4"></i>
+          <span>Beri Ulasan Anda</span>
+        </button>
+      </div>
+
+      <!-- Rating Overview & Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Score Card -->
+        <div class="bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg shadow-orange-500/20">
+          <span class="text-5xl sm:text-6xl font-black tracking-tight" id="review-avg-score">4.9</span>
+          <div class="flex items-center gap-1 text-amber-200 text-lg my-2" id="review-avg-stars">
+            ★★★★★
+          </div>
+          <p class="text-xs text-white/90 font-medium">Berdasarkan <span id="review-total-count" class="font-bold underline">0</span> ulasan pelanggan</p>
+          <span class="mt-3 px-3 py-1 bg-white/20 backdrop-blur rounded-full text-[11px] font-bold uppercase tracking-wider">
+            Sangat Memuaskan
+          </span>
+        </div>
+
+        <!-- Rating Distribution Bars -->
+        <div class="md:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs flex flex-col justify-center space-y-2.5">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Distribusi Bintang</h4>
+          
+          <!-- 5 Stars -->
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <span class="w-16 flex items-center gap-1 text-amber-500">5 <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i></span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="bar-star-5" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 80%"></div>
+            </div>
+            <span id="count-star-5" class="w-8 text-right text-slate-400">0</span>
+          </div>
+
+          <!-- 4 Stars -->
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <span class="w-16 flex items-center gap-1 text-amber-500">4 <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i></span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="bar-star-4" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 20%"></div>
+            </div>
+            <span id="count-star-4" class="w-8 text-right text-slate-400">0</span>
+          </div>
+
+          <!-- 3 Stars -->
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <span class="w-16 flex items-center gap-1 text-amber-500">3 <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i></span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="bar-star-3" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <span id="count-star-3" class="w-8 text-right text-slate-400">0</span>
+          </div>
+
+          <!-- 2 Stars -->
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <span class="w-16 flex items-center gap-1 text-amber-500">2 <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i></span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="bar-star-2" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <span id="count-star-2" class="w-8 text-right text-slate-400">0</span>
+          </div>
+
+          <!-- 1 Star -->
+          <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+            <span class="w-16 flex items-center gap-1 text-amber-500">1 <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i></span>
+            <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div id="bar-star-1" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <span id="count-star-1" class="w-8 text-right text-slate-400">0</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Customer Reviews List -->
+      <div id="reviews-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        <!-- Dynamic Review Cards injected by JS -->
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-white border-t border-slate-200 mt-16 py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+        
+        <!-- Brand & Address -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-center md:justify-start gap-2">
+            <span class="text-xl" id="footer-logo">🏪</span>
+            <span class="font-bold text-slate-900" id="footer-name">Warung Cemilan</span>
+          </div>
+          <p class="text-xs text-slate-500" id="footer-address">Jl. Contoh No. 88, Bandung</p>
+          <p class="text-xs text-slate-400">Buka Setiap Hari • Melayani Pesanan Online & Dine-in</p>
+        </div>
+
+        <!-- Links & Copyright -->
+        <div class="flex flex-col items-center md:items-end gap-2 text-xs text-slate-500">
+          <div class="flex items-center gap-4">
+            <a href="#katalog" class="hover:text-slate-900 transition">Produk</a>
+            <span>•</span>
+            <a href="#cara-transaksi" class="hover:text-slate-900 transition">Cara Transaksi</a>
+            <span>•</span>
+            <a href="#ulasan" class="hover:text-slate-900 transition">Ulasan Toko</a>
+            <span>•</span>
+            <a href="index.html" class="text-slate-400 hover:text-slate-600 transition flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3"></i> Login Staf
+            </a>
+          </div>
+          <p class="text-slate-400">© 2026 Warung Cemilan. Seluruh hak cipta dilindungi.</p>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= SLIDE-OVER / DRAWER KERANJANG BELANJA ================= -->
+  <div id="cart-drawer-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden transition-opacity">
+    <div id="cart-drawer" class="fixed inset-y-0 right-0 max-w-full w-full sm:max-w-md bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300">
+      
+      <!-- Drawer Header -->
+      <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center shadow-sm">
+            <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-900">Keranjang Belanja</h3>
+            <p class="text-xs text-slate-500" id="cart-drawer-count">0 item dipilih</p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-cart" class="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/60 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Drawer Body: Items list -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-3" id="cart-items-container">
+        <!-- Cart Items dynamic -->
+      </div>
+
+      <!-- Drawer Footer: Form & Checkout -->
+      <div class="p-5 border-t border-slate-200 bg-white space-y-4 shadow-lg">
+        
+        <!-- Cart Total Summary -->
+        <div class="space-y-1.5 pb-2 border-b border-slate-100">
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>Total Item</span>
+            <span id="cart-summary-items">0 item</span>
+          </div>
+          <div class="flex justify-between items-center text-sm font-bold text-slate-900">
+            <span>Total Pembayaran</span>
+            <span id="cart-summary-total" class="text-lg text-orange-600 font-extrabold">Rp 0</span>
+          </div>
+        </div>
+
+        <!-- Order Form Fields -->
+        <div class="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pemesan <span class="text-rose-500">*</span></label>
+            <input type="text" id="order-customer-name" placeholder="Masukkan nama Anda..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp / HP <span class="text-rose-500">*</span></label>
+            <input type="tel" id="order-customer-phone" placeholder="Contoh: 081234567890" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pengambilan</label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
+                <input type="radio" name="order-method" value="Ambil di Warung" checked class="text-orange-500 focus:ring-orange-400" />
+                <span>Ambil Sendiri</span>
+              </label>
+              <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
+                <input type="radio" name="order-method" value="Antar / Kirim" class="text-orange-500 focus:ring-orange-400" />
+                <span>Antar / Kirim</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Input Alamat & Share Location (Muncul jika Antar dipilih) -->
+          <div id="wrap-order-address" class="hidden space-y-2 p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold text-slate-800">Alamat Pengantaran <span class="text-rose-500">*</span></label>
+              <span class="text-[10px] text-amber-700 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full">2 Opsi Tersedia</span>
+            </div>
+
+            <!-- Tab Pilihan Opsi Alamat -->
+            <div class="grid grid-cols-2 gap-1.5 p-1 bg-white rounded-xl border border-slate-200/80 text-xs font-semibold">
+              <button type="button" id="tab-addr-manual" class="addr-tab py-1.5 px-2 rounded-lg bg-orange-500 text-white shadow-xs transition flex items-center justify-center gap-1.5">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                <span>Ketik Manual</span>
+              </button>
+              <button type="button" id="tab-addr-gps" class="addr-tab py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i>
+                <span>Share Location</span>
+              </button>
+            </div>
+
+            <!-- Konten Opsi 1: Ketik Manual -->
+            <div id="addr-manual-panel" class="space-y-1.5">
+              <textarea id="order-customer-address" rows="2" placeholder="Tuliskan jalan, nomor rumah, RT/RW, atau patokan..." class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition resize-none"></textarea>
+              <p class="text-[10px] text-slate-400">Contoh: Jl. Dipatiukur No. 42 (Pagar hitam samping warung)</p>
+            </div>
+
+            <!-- Konten Opsi 2: Share Location (GPS) -->
+            <div id="addr-gps-panel" class="hidden space-y-2">
+              <button type="button" id="btn-get-gps" class="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-orange-50 text-orange-700 border border-orange-300 font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition transform active:scale-98">
+                <i data-lucide="navigation" class="w-4 h-4 text-orange-500"></i>
+                <span id="btn-gps-text">Ambil Titik Lokasi Saya (GPS)</span>
+              </button>
+
+              <!-- Status deteksi GPS -->
+              <div id="gps-status-box" class="hidden p-2.5 rounded-xl bg-white border border-emerald-200 text-xs space-y-1.5">
+                <div class="flex items-center justify-between text-emerald-700 font-bold">
+                  <span class="flex items-center gap-1">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    <span>Lokasi Berhasil Ditandai</span>
+                  </span>
+                  <a href="#" id="gps-preview-link" target="_blank" class="text-[11px] text-blue-600 hover:underline flex items-center gap-0.5">
+                    <span>Buka Peta</span>
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                  </a>
+                </div>
+                <p id="gps-coords-text" class="text-[11px] text-slate-500 font-mono truncate"></p>
+                <div id="gps-address-detected" class="text-[11px] text-slate-700 bg-slate-50 p-1.5 rounded-lg border border-slate-100 hidden"></div>
+              </div>
+
+              <!-- Patokan tambahan untuk GPS -->
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-0.5">Detail / Patokan Tambahan (Opsional)</label>
+                <input type="text" id="order-gps-notes" placeholder="Contoh: Rumah cat hijau, depan pos satpam..." class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:border-orange-500 outline-none transition" />
+              </div>
+            </div>
+
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pembayaran</label>
+            <div class="grid grid-cols-3 gap-1.5 text-center">
+              <label class="p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium flex flex-col items-center gap-1">
+                <input type="radio" name="order-payment" value="QRIS" checked class="text-orange-500" />
+                <span class="text-[11px] font-bold">QRIS</span>
+              </label>
+              <label class="p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium flex flex-col items-center gap-1">
+                <input type="radio" name="order-payment" value="Transfer" class="text-orange-500" />
+                <span class="text-[11px] font-bold">Transfer</span>
+              </label>
+              <label class="p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium flex flex-col items-center gap-1">
+                <input type="radio" name="order-payment" value="Tunai" class="text-orange-500" />
+                <span class="text-[11px] font-bold">Tunai</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+            <input type="text" id="order-customer-notes" placeholder="Contoh: Es dipisah, pedas sedang..." class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition" />
+          </div>
+        </div>
+
+        <!-- Tombol Aksi Pemesanan -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <!-- Button 1: Pesan Langsung di Aplikasi / Web -->
+          <button type="button" id="btn-submit-web-order" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold text-sm shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition transform active:scale-98">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Pesan Langsung di Web</span>
+          </button>
+
+          <!-- Button 2: Pesan via WhatsApp -->
+          <button type="button" id="btn-submit-order" class="w-full py-2.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 font-semibold text-xs flex items-center justify-center gap-2 transition">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Atau Pesan via Chat WhatsApp</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL TULIS ULASAN ================= -->
+  <div id="review-modal-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 modal-card relative">
+      
+      <!-- Close button -->
+      <button type="button" id="btn-close-review-modal" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="text-center mb-5">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-2xl mx-auto mb-2 border border-amber-200">
+          ⭐
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Beri Ulasan Toko</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Bagikan pengalaman belanja Anda di Warung Cemilan</p>
+      </div>
+
+      <!-- Form Review -->
+      <form id="form-review" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Anda <span class="text-rose-500">*</span></label>
+          <input type="text" id="review-name" required placeholder="Contoh: Rian Anggara" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Beri Rating Bintang <span class="text-rose-500">*</span></label>
+          <div class="flex items-center justify-center gap-2 py-2 star-rating text-3xl text-amber-400 select-none" id="star-picker">
+            <span data-star="1" class="cursor-pointer">★</span>
+            <span data-star="2" class="cursor-pointer">★</span>
+            <span data-star="3" class="cursor-pointer">★</span>
+            <span data-star="4" class="cursor-pointer">★</span>
+            <span data-star="5" class="cursor-pointer">★</span>
+          </div>
+          <p id="star-label" class="text-center text-xs font-bold text-amber-600">5 Bintang (Luar Biasa)</p>
+          <input type="hidden" id="review-rating-value" value="5" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Ulasan Anda <span class="text-rose-500">*</span></label>
+          <textarea id="review-comment" required rows="3" placeholder="Tuliskan pendapat Anda tentang rasa, keramahan kasir, kebersihan, atau kecepatan layanan..." class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 outline-none transition resize-none"></textarea>
+        </div>
+
+        <div id="review-error" class="hidden text-xs text-rose-600 font-medium p-2.5 rounded-xl bg-rose-50 border border-rose-100"></div>
+
+        <button type="submit" id="btn-submit-review" class="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Kirim Ulasan</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL NOTA DIGITAL & PESANAN BERHASIL ================= -->
+  <div id="order-success-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 shadow-2xl border border-slate-100 modal-card relative space-y-4">
+      
+      <!-- Close button -->
+      <button type="button" id="btn-close-receipt-modal" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Success Header -->
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2.5 border border-emerald-200">
+          <i data-lucide="check" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-900">Pesanan Berhasil Masuk!</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Pesanan Anda telah tercatat langsung di sistem Warung Cemilan.</p>
+      </div>
+
+      <!-- Kode Pesanan Box -->
+      <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Nomor Pesanan</p>
+          <p class="text-lg font-black text-orange-600 tracking-wide" id="receipt-order-id">INV0000</p>
+        </div>
+        <button type="button" id="btn-copy-order-id" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Salin</span>
+        </button>
+      </div>
+
+      <!-- Ringkasan Rincian -->
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-slate-500">Nama Pemesan</span>
+          <span class="font-bold text-slate-800" id="receipt-customer-name">-</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-slate-500">Metode Pengambilan</span>
+          <span class="font-bold text-slate-800" id="receipt-delivery-method">-</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100" id="receipt-row-address">
+          <span class="text-slate-500">Alamat Antar</span>
+          <span class="font-medium text-slate-700 text-right max-w-[200px]" id="receipt-address">-</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-100">
+          <span class="text-slate-500">Metode Pembayaran</span>
+          <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200" id="receipt-payment-method">QRIS</span>
+        </div>
+      </div>
+
+      <!-- Items List -->
+      <div class="space-y-2">
+        <p class="text-xs font-bold text-slate-800">Daftar Menu:</p>
+        <div id="receipt-items-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+          <!-- Injected items -->
+        </div>
+        <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-sm font-black text-slate-900">
+          <span>Total Tagihan</span>
+          <span class="text-base text-orange-600 font-extrabold" id="receipt-total">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- Instruksi Pembayaran Box -->
+      <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1" id="receipt-payment-guide">
+        <p class="font-bold flex items-center gap-1.5 text-amber-800">
+          <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+          <span>Instruksi Pembayaran & Pengambilan</span>
+        </p>
+        <p class="text-[11px] leading-relaxed text-amber-800" id="receipt-guide-text">
+          Silakan lakukan pembayaran sesuai metode yang Anda pilih. Anda dapat mengonfirmasikan pembayaran langsung ke kasir atau via WhatsApp.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-2">
+        <a href="#" id="btn-receipt-wa-confirm" target="_blank" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 transition">
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>Kirim Konfirmasi Pesanan ke WhatsApp Kasir</span>
+        </a>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="btn-print-receipt" class="py-2.5 px-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>Cetak Nota</span>
+          </button>
+          <button type="button" id="btn-done-receipt" class="py-2.5 px-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <span>Selesai & Belanja Lagi</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL LACAK PESANAN ================= -->
+  <div id="track-order-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 modal-card relative space-y-4">
+      
+      <button type="button" id="btn-close-track-modal" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-xl mx-auto mb-2 border border-orange-200">
+          <i data-lucide="search" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Lacak Status Pesanan</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Masukkan nomor pesanan yang Anda terima saat checkout</p>
+      </div>
+
+      <div class="flex gap-2">
+        <input type="text" id="track-input-id" placeholder="Contoh: INV1605" class="flex-1 px-3.5 py-2.5 text-sm uppercase rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition" />
+        <button type="button" id="btn-submit-track" class="px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition flex items-center gap-1.5">
+          <span>Cari</span>
+        </button>
+      </div>
+
+      <div id="track-result" class="hidden p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-2.5">
+        <!-- Result content dynamic -->
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center gap-3 text-sm font-medium transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toast-icon" class="text-amber-400">
+      <i data-lucide="check-circle" class="w-5 h-5"></i>
+    </div>
+    <span id="toast-msg">Notifikasi</span>
+  </div>
+
+  <script src="js/katalog.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

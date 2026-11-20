@@ -164,6 +164,7 @@ let cache = {
   transactions: [],
   orders: [],
   stockHistory: [],
+  reviews: [],
   settings: {
     storeName: 'Warung Cemilan',
     tagline: 'Aneka makanan & minuman segar',
@@ -179,7 +180,7 @@ let cache = {
 
 const COLLECTIONS = [
   'users', 'categories', 'products', 'suppliers', 'customers',
-  'transactions', 'orders', 'stockHistory',
+  'transactions', 'orders', 'stockHistory', 'reviews',
 ];
 
 /* -------------------- load -------------------- */
@@ -236,6 +237,7 @@ async function load() {
   } else {
     loadFromFlatFile();
   }
+  ensureReviews();
   return cache;
 }
 
@@ -279,6 +281,8 @@ async function addDoc(collection, data) {
     } catch (err) {
       console.warn(`[DB] Failed to add doc to ${collection}:`, err.message);
     }
+  } else {
+    saveToFlatFile();
   }
 }
 
@@ -289,6 +293,8 @@ async function updateDoc(collection, id, data) {
     } catch (err) {
       console.warn(`[DB] Failed to update doc in ${collection}:`, err.message);
     }
+  } else {
+    saveToFlatFile();
   }
 }
 
@@ -299,6 +305,8 @@ async function deleteDoc(collection, id) {
     } catch (err) {
       console.warn(`[DB] Failed to delete doc from ${collection}:`, err.message);
     }
+  } else {
+    saveToFlatFile();
   }
 }
 
@@ -546,10 +554,66 @@ function publicProduct(p) {
   };
 }
 
+const SEED_REVIEWS = [
+  {
+    id: 'rev_1',
+    name: 'Siti Rahmah',
+    rating: 5,
+    comment: 'Makanannya enak-enak banget, cemilannya selalu renyah dan pelayanannya super cepat! Recommended banget buat nongkrong atau pesan makan siang.',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 'rev_2',
+    name: 'Budi Pratama',
+    rating: 5,
+    comment: 'Paling suka es kopi susu dan cirengnya, nagih bener rasanya pas. Pembayarannya praktis banget tinggal scan QRIS.',
+    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+  },
+  {
+    id: 'rev_3',
+    name: 'Amanda Putri',
+    rating: 5,
+    comment: 'Burgernya mantap dagingnya tebel dan fresh. Harganya sangat ramah di kantong. Sukses terus warung ceyya!',
+    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+  },
+  {
+    id: 'rev_4',
+    name: 'Dimas Setiawan',
+    rating: 4,
+    comment: 'Pesan antar via WhatsApp responnya ramah & cepet banget, packagingnya rapi dan aman sampai rumah.',
+    createdAt: new Date(Date.now() - 86400000 * 10).toISOString(),
+  },
+];
+
+function ensureReviews() {
+  if (!Array.isArray(cache.reviews) || cache.reviews.length === 0) {
+    cache.reviews = JSON.parse(JSON.stringify(SEED_REVIEWS));
+  }
+}
+
+function customerProduct(p) {
+  const cat = cache.categories.find((c) => c.id === p.categoryId);
+  return {
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji || '🛍️',
+    image: p.image || '',
+    categoryId: p.categoryId,
+    category: cat ? cat.name : 'Lainnya',
+    categoryIcon: cat ? cat.icon : '🧰',
+    categoryColor: cat ? cat.color : '#64748b',
+    price: p.price,
+    stock: p.stock,
+    inStock: p.stock > 0,
+    unit: p.unit || 'Pcs',
+  };
+}
+
 module.exports = {
   getDB, load, save, saveSettings, addDoc, updateDoc, deleteDoc,
   syncCollection, syncSettings,
-  uid, now, todayKey, dayKeyOf, nextInvoiceNo, publicProduct,
+  uid, now, todayKey, dayKeyOf, nextInvoiceNo, publicProduct, customerProduct,
+  ensureReviews,
   get useFirestore() { return useFirestore; },
   getInitStatus: () => initStatus,
 };

@@ -20,6 +20,7 @@
     { key: 'stok', label: 'Stok', icon: 'boxes', href: 'stok.html' },
     { key: 'pengguna', label: 'Pengguna', icon: 'user-cog', href: 'pengguna.html' },
     { key: 'pengaturan', label: 'Pengaturan', icon: 'settings', href: 'pengaturan.html' },
+    { key: 'katalog', label: 'Tampilan Pelanggan', icon: 'store', href: 'katalog.html', target: '_blank' },
   ];
 
   const TITLES = {
@@ -61,10 +62,10 @@
     const active = key === currentPage();
     const base = 'nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600';
     return `
-      <a href="${p.href}" class="${base} ${active ? 'active' : ''}">
+      <a href="${p.href}" ${p.target ? `target="${p.target}"` : ''} class="${base} ${active ? 'active' : ''}">
         <i data-lucide="${p.icon}" class="w-5 h-5 shrink-0"></i>
         <span class="flex-1">${p.label}</span>
-        ${active ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : ''}
+        ${p.target ? '<i data-lucide="external-link" class="w-3.5 h-3.5 opacity-40"></i>' : (active ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : '')}
       </a>`;
   }
 
@@ -76,6 +77,7 @@
       { key: 'kasir', label: 'Kasir (POS)', icon: 'shopping-cart', href: 'kasir.html' },
       { key: 'transaksi', label: 'Riwayat Transaksi', icon: 'receipt', href: 'transaksi.html' },
       { key: 'laporan', label: 'Laporan Penghasilan', icon: 'bar-chart-3', href: 'laporan.html' },
+      { key: 'katalog', label: 'Tampilan Pelanggan', icon: 'store', href: 'katalog.html', target: '_blank' },
     ] : NAV;
 
     return list.map((item) => {

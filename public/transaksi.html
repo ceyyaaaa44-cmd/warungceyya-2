@@ -62,24 +62,79 @@
           </div>
         </div>
 
+        <!-- Status Bar & Page Size Selector -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 font-bold border border-blue-200/60">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span id="badge-total-count">Total: 0 Transaksi</span>
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Lazy Load Aktif</span>
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            <label class="text-gray-500 font-medium">Data per halaman:</label>
+            <select id="select-page-size" class="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-bold focus:outline-none focus:border-blue-500 text-xs">
+              <option value="10" selected>10 per Halaman</option>
+              <option value="20">20 per Halaman</option>
+              <option value="50">50 per Halaman</option>
+            </select>
+          </div>
+        </div>
+
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="overflow-x-auto max-h-[58vh] overflow-y-auto relative" id="table-scroll-container">
             <table class="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr class="text-left text-xs uppercase tracking-wider text-gray-400 border-b border-gray-100 bg-gray-50/60">
-                  <th class="px-6 py-3.5 font-semibold">Invoice</th>
-                  <th class="px-6 py-3.5 font-semibold">Tanggal</th>
-                  <th class="px-6 py-3.5 font-semibold">Kasir</th>
-                  <th class="px-6 py-3.5 font-semibold">Metode</th>
-                  <th class="px-6 py-3.5 font-semibold">Status</th>
-                  <th class="px-6 py-3.5 font-semibold">Total</th>
-                  <th class="px-6 py-3.5 font-semibold text-right">Aksi</th>
+              <thead class="sticky top-0 z-10 bg-gray-50 shadow-xs border-b border-gray-200">
+                <tr class="text-left text-xs uppercase tracking-wider text-gray-500">
+                  <th class="px-6 py-3.5 font-bold">Invoice</th>
+                  <th class="px-6 py-3.5 font-bold">Tanggal</th>
+                  <th class="px-6 py-3.5 font-bold">Kasir</th>
+                  <th class="px-6 py-3.5 font-bold">Metode</th>
+                  <th class="px-6 py-3.5 font-bold">Status</th>
+                  <th class="px-6 py-3.5 font-bold">Total</th>
+                  <th class="px-6 py-3.5 font-bold text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody id="ri-rows">
                 <tr><td colspan="7" class="px-6 py-8"><div class="skeleton h-10 rounded-lg"></div><div class="skeleton h-10 rounded-lg mt-2"></div></td></tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Lazy loader indicator -->
+          <div id="lazy-loader" class="hidden p-3.5 text-center border-t border-gray-100 bg-blue-50/40">
+            <div class="inline-flex items-center gap-2 text-xs font-bold text-blue-600">
+              <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+              <span>Memuat data transaksi...</span>
+            </div>
+          </div>
+
+          <!-- Bottom Pagination & Navigation Controls -->
+          <div id="pagination-bar" class="p-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50 text-xs text-gray-600">
+            <div class="flex items-center gap-2">
+              <span id="lazy-info" class="font-medium text-gray-600">Menampilkan 0 dari 0 transaksi</span>
+            </div>
+
+            <!-- Page Buttons -->
+            <div class="flex items-center gap-1.5" id="page-nav-controls">
+              <button type="button" id="btn-prev-page" class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-gray-700 transition flex items-center gap-1">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                <span>Sebelumnya</span>
+              </button>
+              
+              <div id="page-numbers-container" class="flex items-center gap-1">
+                <!-- Numbers [1] [2] [3] -->
+              </div>
+
+              <button type="button" id="btn-next-page" class="px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-gray-700 transition flex items-center gap-1">
+                <span>Berikutnya</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -104,6 +159,7 @@
           <span id="detail-date"></span>
           <span class="inline-flex px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-600">Lunas</span>
         </div>
+        <div id="detail-customer-info" class="hidden mb-4 p-3 bg-blue-50/70 rounded-xl border border-blue-100 text-xs text-blue-900 space-y-1"></div>
         <div id="detail-items" class="space-y-2 mb-5"></div>
         <div class="space-y-2 border-t border-gray-100 pt-4 text-sm">
           <div class="flex justify-between text-gray-500"><span>Subtotal</span><span id="d-sub"></span></div>
