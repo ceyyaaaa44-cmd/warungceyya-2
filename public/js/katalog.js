@@ -236,17 +236,38 @@
             </div>
           </div>
 
-          <!-- Price & Add to Cart Action -->
+          <!-- Price & Add to Cart / Stepper Action -->
           <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 sm:gap-2">
             <div>
               <p class="text-[9px] sm:text-[10px] text-slate-400 font-medium uppercase tracking-wider">Harga</p>
               <p class="text-xs sm:text-base font-extrabold text-orange-600">${formatRp(p.price)}</p>
             </div>
 
-            <button type="button" class="btn-add-cart ${isAvailable ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/25 active:scale-95' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 sm:gap-1.5" data-id="${p.id}" ${!isAvailable ? 'disabled' : ''}>
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span class="hidden sm:inline">Pesan</span>
-            </button>
+            ${(() => {
+              if (!isAvailable) {
+                return `<button type="button" class="bg-slate-100 text-slate-400 cursor-not-allowed px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold" disabled>Habis</button>`;
+              }
+              const inCart = cart.find((it) => it.id === p.id);
+              if (inCart && inCart.qty > 0) {
+                return `
+                  <div class="flex items-center gap-1 bg-orange-50 px-1.5 py-1 rounded-xl border border-orange-200 shadow-2xs">
+                    <button type="button" class="btn-card-minus text-orange-700 hover:bg-white p-1 rounded-lg transition active:scale-95" data-id="${p.id}" title="Kurangi">
+                      <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <span class="w-5 text-center text-xs font-black text-orange-900">${inCart.qty}</span>
+                    <button type="button" class="btn-card-plus text-orange-700 hover:bg-white p-1 rounded-lg transition active:scale-95" data-id="${p.id}" title="Tambah">
+                      <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                `;
+              }
+              return `
+                <button type="button" class="btn-add-cart bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/25 active:scale-95 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 sm:gap-1.5" data-id="${p.id}">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span class="hidden sm:inline">Pesan</span>
+                </button>
+              `;
+            })()}
           </div>
         </div>
       `;
@@ -262,6 +283,19 @@
         if (prod) {
           openProductOptionModal(prod);
         }
+      });
+    });
+
+    // Attach inline stepper clicks for quick multi-item ordering on the catalog
+    grid.querySelectorAll('.btn-card-minus').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        updateCartQty(btn.dataset.id, -1);
+      });
+    });
+
+    grid.querySelectorAll('.btn-card-plus').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        updateCartQty(btn.dataset.id, 1);
       });
     });
   }
@@ -319,6 +353,197 @@
     selectedOptionQty = 1;
   }
 
+  // ------------------------- 2C. MULTI-ORDER (PESAN BEBERAPA MENU SEKALIGUS) -------------------------
+  let multiOrderSelections = {}; // { [productId]: qty }
+  let multiOrderFilterQuery = '';
+
+  function openMultiOrderModal() {
+    const modal = document.getElementById('multi-order-modal');
+    if (!modal) return;
+
+    // Inisialisasi pilihan menu dari keranjang saat ini atau menu yang tersedia
+    multiOrderSelections = {};
+    cart.forEach((it) => {
+      multiOrderSelections[it.id] = it.qty;
+    });
+
+    multiOrderFilterQuery = '';
+    const searchInput = document.getElementById('multi-order-search');
+    if (searchInput) searchInput.value = '';
+
+    renderMultiOrderList();
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeMultiOrderModal() {
+    const modal = document.getElementById('multi-order-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function renderMultiOrderList() {
+    const container = document.getElementById('multi-order-items-list');
+    if (!container) return;
+
+    const q = (multiOrderFilterQuery || '').toLowerCase().trim();
+    let items = allProducts.filter((p) => p.inStock && p.stock > 0);
+    if (q) {
+      items = items.filter((p) => (p.name || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10 px-4">
+          <div class="text-3xl mb-2">🔍</div>
+          <p class="font-bold text-xs text-slate-700">Tidak ada menu yang sesuai</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Coba gunakan kata kunci pencarian yang lain.</p>
+        </div>
+      `;
+      updateMultiOrderSummary();
+      return;
+    }
+
+    container.innerHTML = items.map((p) => {
+      const qty = multiOrderSelections[p.id] || 0;
+      const isSelected = qty > 0;
+      const imageHtml = p.image 
+        ? `<img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.innerHTML='<span class=\\'text-xl\\'>${p.emoji || '🛍️'}</span>';" />`
+        : `<span class="text-xl">${p.emoji || '🛍️'}</span>`;
+
+      return `
+        <div class="pt-2.5 first:pt-0 flex items-center justify-between gap-3 group transition rounded-2xl ${isSelected ? 'bg-orange-50/70 p-2 border border-orange-200/80 shadow-2xs' : 'p-1.5'}">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <input type="checkbox" class="multi-check w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer shrink-0" data-id="${p.id}" ${isSelected ? 'checked' : ''} />
+            <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden border border-slate-100 shadow-2xs">
+              ${imageHtml}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <h4 class="font-bold text-xs sm:text-sm text-slate-900 truncate">${p.name}</h4>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded text-white" style="background-color: ${p.categoryColor || '#f97316'}">${p.category || 'Menu'}</span>
+              </div>
+              <p class="text-xs text-orange-600 font-extrabold mt-0.5">${formatRp(p.price)} <span class="text-[10px] text-slate-400 font-normal">/${p.unit || 'Pcs'}</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+            <button type="button" class="btn-multi-minus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-id="${p.id}" title="Kurangi porsi">
+              <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="w-6 text-center text-xs font-black text-slate-900">${qty}</span>
+            <button type="button" class="btn-multi-plus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-id="${p.id}" title="Tambah porsi">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+
+    // Checkbox toggles
+    container.querySelectorAll('.multi-check').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const id = cb.dataset.id;
+        if (cb.checked) {
+          multiOrderSelections[id] = Math.max(1, multiOrderSelections[id] || 1);
+        } else {
+          delete multiOrderSelections[id];
+        }
+        renderMultiOrderList();
+      });
+    });
+
+    // Stepper minus
+    container.querySelectorAll('.btn-multi-minus').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const current = multiOrderSelections[id] || 0;
+        if (current > 1) {
+          multiOrderSelections[id] = current - 1;
+        } else {
+          delete multiOrderSelections[id];
+        }
+        renderMultiOrderList();
+      });
+    });
+
+    // Stepper plus
+    container.querySelectorAll('.btn-multi-plus').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const current = multiOrderSelections[id] || 0;
+        multiOrderSelections[id] = current + 1;
+        renderMultiOrderList();
+      });
+    });
+
+    updateMultiOrderSummary();
+  }
+
+  function updateMultiOrderSummary() {
+    const countEl = document.getElementById('multi-summary-count');
+    const totalEl = document.getElementById('multi-summary-total');
+
+    const keys = Object.keys(multiOrderSelections).filter((id) => (multiOrderSelections[id] || 0) > 0);
+    const menuCount = keys.length;
+    let totalItems = 0;
+    let totalPrice = 0;
+
+    keys.forEach((id) => {
+      const qty = multiOrderSelections[id];
+      const prod = allProducts.find((p) => p.id === id);
+      if (prod && qty > 0) {
+        totalItems += qty;
+        totalPrice += prod.price * qty;
+      }
+    });
+
+    if (countEl) countEl.textContent = `${menuCount} Menu Dipilih (${totalItems} Porsi)`;
+    if (totalEl) totalEl.textContent = formatRp(totalPrice);
+  }
+
+  function applyMultiOrderToCart(openDrawer = false) {
+    const keys = Object.keys(multiOrderSelections).filter((id) => (multiOrderSelections[id] || 0) > 0);
+    if (keys.length === 0) {
+      alert('Silakan pilih dan beri jumlah minimal 1 menu cemilan atau minuman.');
+      return;
+    }
+
+    keys.forEach((id) => {
+      const prod = allProducts.find((p) => p.id === id);
+      const qty = multiOrderSelections[id];
+      if (prod && qty > 0) {
+        const existing = cart.find((it) => it.id === prod.id);
+        if (existing) {
+          existing.qty = qty;
+        } else {
+          cart.push({
+            id: prod.id,
+            name: prod.name,
+            price: prod.price,
+            emoji: prod.emoji || '🛍️',
+            image: prod.image || '',
+            unit: prod.unit || 'Pcs',
+            qty: qty,
+          });
+        }
+      }
+    });
+
+    saveCartToStorage();
+    renderCart();
+    filterAndRenderProducts();
+    closeMultiOrderModal();
+
+    if (openDrawer) {
+      toggleCart(true);
+      showToast(`🛒 ${keys.length} menu siap dipesan, silakan lengkapi pesanan!`);
+    } else {
+      showToast(`✓ Berhasil memasukkan ${keys.length} menu ke keranjang`);
+    }
+  }
+
   // ------------------------- 3. CART SYSTEM -------------------------
   function loadCartFromStorage() {
     try {
@@ -352,6 +577,7 @@
     }
     saveCartToStorage();
     renderCart();
+    filterAndRenderProducts();
     if (showFeedback) {
       showToast(`✓ "${product.name}" (${quantity} ${product.unit || 'item'}) masuk keranjang`);
     }
@@ -367,6 +593,7 @@
     }
     saveCartToStorage();
     renderCart();
+    filterAndRenderProducts();
   }
 
   function renderCart() {
@@ -1322,6 +1549,50 @@
           showToast(`🛒 Silakan lengkapi pesanan Anda`);
         }
       });
+    }
+
+    // Multi-Order Modal (Pesan Beberapa Menu Sekaligus)
+    const btnOpenMultiOrder = document.getElementById('btn-open-multi-order');
+    const btnCloseMultiOrder = document.getElementById('btn-close-multi-order');
+    const multiOrderModal = document.getElementById('multi-order-modal');
+    const multiOrderSearch = document.getElementById('multi-order-search');
+    const btnMultiSelectAll = document.getElementById('btn-multi-select-all');
+    const btnMultiClearAll = document.getElementById('btn-multi-clear-all');
+    const btnMultiAddCart = document.getElementById('btn-multi-add-cart');
+    const btnMultiCheckoutNow = document.getElementById('btn-multi-checkout-now');
+
+    if (btnOpenMultiOrder) btnOpenMultiOrder.addEventListener('click', openMultiOrderModal);
+    if (btnCloseMultiOrder) btnCloseMultiOrder.addEventListener('click', closeMultiOrderModal);
+    if (multiOrderModal) {
+      multiOrderModal.addEventListener('click', (e) => {
+        if (e.target === multiOrderModal) closeMultiOrderModal();
+      });
+    }
+    if (multiOrderSearch) {
+      multiOrderSearch.addEventListener('input', (e) => {
+        multiOrderFilterQuery = e.target.value;
+        renderMultiOrderList();
+      });
+    }
+    if (btnMultiSelectAll) {
+      btnMultiSelectAll.addEventListener('click', () => {
+        allProducts.filter((p) => p.inStock && p.stock > 0).forEach((p) => {
+          if (!multiOrderSelections[p.id]) multiOrderSelections[p.id] = 1;
+        });
+        renderMultiOrderList();
+      });
+    }
+    if (btnMultiClearAll) {
+      btnMultiClearAll.addEventListener('click', () => {
+        multiOrderSelections = {};
+        renderMultiOrderList();
+      });
+    }
+    if (btnMultiAddCart) {
+      btnMultiAddCart.addEventListener('click', () => applyMultiOrderToCart(false));
+    }
+    if (btnMultiCheckoutNow) {
+      btnMultiCheckoutNow.addEventListener('click', () => applyMultiOrderToCart(true));
     }
 
     // Track Order Modal
