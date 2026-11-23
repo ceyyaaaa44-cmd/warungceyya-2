@@ -47,7 +47,7 @@
     icon.innerHTML = isSuccess 
       ? '<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>' 
       : '<i data-lucide="alert-circle" class="w-5 h-5 text-rose-400"></i>';
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 
     toast.classList.remove('translate-y-20', 'opacity-0');
     toast.classList.add('translate-y-0', 'opacity-100');
@@ -229,7 +229,41 @@
             <div class="flex items-start justify-between gap-1 mb-1">
               <h3 class="font-bold text-slate-900 text-xs sm:text-base leading-snug line-clamp-2">${p.name}</h3>
             </div>
-            
+            ${isSpicyProduct(p) ? `
+              <div class="mb-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-red-600 bg-red-50 border border-red-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                  🌶️ Level 1-5 (+Request Lvl)
+                </span>
+              </div>
+            ` : ''}
+            ${isPizzaProduct(p) ? `
+              <div class="mb-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                  🍕 5 Varian Rasa
+                </span>
+              </div>
+            ` : ''}
+            ${isBurgerProduct(p) ? `
+              <div class="mb-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                  🍔 5 Varian Burger
+                </span>
+              </div>
+            ` : ''}
+            ${isMartabakProduct(p) ? `
+              <div class="mb-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                  🥞 5 Pilihan Topping
+                </span>
+              </div>
+            ` : ''}
+            ${isRotiBakarProduct(p) ? `
+              <div class="mb-1.5">
+                <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                  🍞 3 Pilihan Rasa
+                </span>
+              </div>
+            ` : ''}
             <div class="flex items-center justify-between gap-1 mb-2 sm:mb-3">
               <span class="text-[11px] sm:text-xs text-slate-500 font-medium">per ${p.unit || 'Pcs'}</span>
               ${stockBadge}
@@ -248,7 +282,13 @@
                 return `<button type="button" class="bg-slate-100 text-slate-400 cursor-not-allowed px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold" disabled>Habis</button>`;
               }
               const inCart = cart.find((it) => it.id === p.id);
-              if (inCart && inCart.qty > 0) {
+              const isSpicy = isSpicyProduct(p);
+              const isPizza = isPizzaProduct(p);
+              const isBurger = isBurgerProduct(p);
+              const isMartabak = isMartabakProduct(p);
+              const isRotiBakar = isRotiBakarProduct(p);
+              const hasVar = isPizza || isBurger || isMartabak || isRotiBakar || p.hasVariants;
+              if (inCart && inCart.qty > 0 && !isSpicy && !hasVar) {
                 return `
                   <div class="flex items-center gap-1 bg-orange-50 px-1.5 py-1 rounded-xl border border-orange-200 shadow-2xs">
                     <button type="button" class="btn-card-minus text-orange-700 hover:bg-white p-1 rounded-lg transition active:scale-95" data-id="${p.id}" title="Kurangi">
@@ -262,9 +302,9 @@
                 `;
               }
               return `
-                <button type="button" class="btn-add-cart bg-orange-500 hover:bg-orange-600 text-white shadow-sm shadow-orange-500/25 active:scale-95 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 sm:gap-1.5" data-id="${p.id}">
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span class="hidden sm:inline">Pesan</span>
+                <button type="button" class="btn-add-cart ${isSpicy ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:to-red-600 shadow-red-500/20' : hasVar ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-amber-500/20' : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/25'} text-white shadow-sm active:scale-95 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 sm:gap-1.5" data-id="${p.id}">
+                  <i data-lucide="${isSpicy ? 'flame' : isPizza ? 'pizza' : isBurger ? 'sandwich' : isMartabak ? 'cake' : hasVar ? 'sparkles' : 'plus'}" class="w-3.5 h-3.5"></i>
+                  <span>${isSpicy ? 'Pilih Level' : hasVar ? 'Pilih Varian' : 'Pesan'}</span>
                 </button>
               `;
             })()}
@@ -273,7 +313,7 @@
       `;
     }).join('');
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 
     // Attach click events to "Pesan" - Menampilkan pilihan 2 opsi
     grid.querySelectorAll('.btn-add-cart').forEach((btn) => {
@@ -301,28 +341,215 @@
   }
 
   // ------------------------- 2B. PRODUCT OPTION MODAL (2 OPSI PESANAN) -------------------------
+  
+  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic)
+  function isSpicyProduct(p) {
+    if (!p) return false;
+    if (p.hasSpicyLevel === true) return true;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+  }
+
+  // Spicy option modal states
+  let selectedSpicyLevel = 1;
+  let selectedIsExtraSpicy = false;
+  let selectedExtraSpicyLevel = 6;
+  let selectedSpicyNote = '';
+  let multiOrderSpicySelections = {}; // { [productId]: level }
+
+  function isPizzaProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('pyezza');
+  }
+
+  function isBurgerProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('bulgel');
+  }
+
+  function isMartabakProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('maytabac');
+  }
+
+  function isRotiBakarProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('nti bakay') || name.includes('roti bakar');
+  }
+
+  function isVariantProduct(p) {
+    if (!p) return false;
+    if (p.hasVariants === true) return true;
+    return isPizzaProduct(p) || isBurgerProduct(p) || isMartabakProduct(p) || isRotiBakarProduct(p);
+  }
+
+  const PIZZA_VARIANTS = ['Margherita', 'Pepperoni', 'Veggie', 'Seafood', 'Truffle'];
+  const BURGER_VARIANTS = ['Doubble Cheese Burger', 'Beef Burger', 'Veggie Burger', 'Smacker Burger', 'Chicken Burger'];
+  const MARTABAK_VARIANTS = ['Kacang', 'Coklat', 'Keju', 'Selai', 'Ketan'];
+  const ROTI_BAKAR_VARIANTS = ['Coklat', 'Keju', 'Selai'];
+
+  const VARIANT_DETAILS_MAP = {
+    'Margherita': { icon: '🧀', desc: 'Saus tomat, mozzarella & basil' },
+    'Pepperoni': { icon: '🥩', desc: 'Daging sapi & keju leleh' },
+    'Veggie': { icon: '🥦', desc: 'Jamur, paprika & jagung manis' },
+    'Seafood': { icon: '🦐', desc: 'Udang, cumi & saus spesial' },
+    'Truffle': { icon: '🍄', desc: 'Jamur spesial & aroma truffle' },
+    'Doubble Cheese Burger': { icon: '🧀', desc: 'Double beef patty & keju leleh melimpah' },
+    'Beef Burger': { icon: '🥩', desc: 'Daging sapi panggang & sayuran segar' },
+    'Veggie Burger': { icon: '🥦', desc: 'Patty nabati sehat, selada & tomat' },
+    'Smacker Burger': { icon: '🥓', desc: 'Burger spesial dengan saus smacker gurih' },
+    'Chicken Burger': { icon: '🍗', desc: 'Patty ayam krispi renyah & mayo' },
+    'Kacang': { icon: '🥜', desc: 'Taburan kacang tanah sangrai gurih & renyah' },
+    'Coklat': { icon: '🍫', desc: 'Coklat butir manis legit lumer di lidah' },
+    'Keju': { icon: '🧀', desc: 'Keju cheddar parut melimpah & creamy gurih' },
+    'Selai': { icon: '🍓', desc: 'Selai buah segar manis aroma wangi' },
+    'Ketan': { icon: '🍚', desc: 'Ketan hitam legit manis gurih dengan susu kental' },
+  };
+
+  function getProductVariants(p) {
+    if (!p) return [];
+    if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) return p.variants;
+    if (isPizzaProduct(p)) return PIZZA_VARIANTS;
+    if (isBurgerProduct(p)) return BURGER_VARIANTS;
+    if (isMartabakProduct(p)) return MARTABAK_VARIANTS;
+    if (isRotiBakarProduct(p)) return ROTI_BAKAR_VARIANTS;
+    return [];
+  }
+
+  let selectedProductVariant = '';
+  let selectedPizzaVariant = 'Margherita';
+  let multiOrderPizzaSelections = {}; // { [productId]: variant }
+  let multiOrderBurgerSelections = {}; // { [productId]: variant }
+  let multiOrderMartabakSelections = {}; // { [productId]: variant }
+  let multiOrderRotiBakarSelections = {}; // { [productId]: variant }
+  let multiOrderNotes = {}; // { [productId]: note }
+
   let selectedOptionProduct = null;
   let selectedOptionQty = 1;
+
+  function getSpicyExtraPerUnit() {
+    if (!selectedOptionProduct || !isSpicyProduct(selectedOptionProduct)) return 0;
+    if (selectedIsExtraSpicy) {
+      return Math.max(1, selectedExtraSpicyLevel - 5) * 2000;
+    }
+    return 0;
+  }
+
+  function getEffectiveSpicyLevel() {
+    if (!selectedOptionProduct || !isSpicyProduct(selectedOptionProduct)) return null;
+    return selectedIsExtraSpicy ? selectedExtraSpicyLevel : selectedSpicyLevel;
+  }
+
+  function renderProductVariantPills(product) {
+    const group = document.getElementById('opt-variant-group');
+    if (!group || !product) return;
+    const variants = getProductVariants(product);
+    if (!variants.length) return;
+
+    if (!variants.includes(selectedProductVariant)) {
+      selectedProductVariant = variants[0];
+    }
+
+    group.innerHTML = variants.map((v) => {
+      const isSel = v === selectedProductVariant;
+      const info = VARIANT_DETAILS_MAP[v] || { icon: isBurgerProduct(product) ? '🍔' : '🍕', desc: 'Varian menu spesial' };
+      return `
+        <button type="button" class="btn-product-variant p-2.5 rounded-xl text-left border transition flex items-center gap-2.5 ${isSel ? 'border-orange-500 bg-orange-500 text-white shadow-xs scale-101' : 'border-slate-200 bg-white text-slate-700 hover:border-amber-400'}" data-variant="${v}">
+          <span class="text-lg">${info.icon}</span>
+          <div class="min-w-0 flex-1">
+            <span class="text-xs font-bold block leading-tight ${isSel ? 'text-white' : 'text-slate-800'}">${v}</span>
+            <span class="text-[10px] ${isSel ? 'opacity-90 text-white' : 'text-slate-400'} block leading-tight">${info.desc}</span>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    group.querySelectorAll('.btn-product-variant').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedProductVariant = btn.dataset.variant;
+        selectedPizzaVariant = btn.dataset.variant;
+        renderProductVariantPills(product);
+      });
+    });
+
+    const badge = document.getElementById('opt-variant-badge');
+    if (badge) {
+      badge.textContent = `Varian: ${selectedProductVariant}`;
+    }
+  }
+
+  function renderPizzaVariantPillStates() {
+    if (selectedOptionProduct) {
+      renderProductVariantPills(selectedOptionProduct);
+    }
+  }
+
+  function renderSpicyPillStates() {
+    const pills = document.querySelectorAll('#opt-spicy-preset-group .btn-spicy-lvl');
+    pills.forEach((btn) => {
+      const lvl = parseInt(btn.dataset.lvl, 10);
+      if (!selectedIsExtraSpicy && lvl === selectedSpicyLevel) {
+        btn.className = 'btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-red-500 bg-gradient-to-b from-orange-500 to-red-600 text-white shadow-xs scale-102';
+      } else {
+        btn.className = 'btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-slate-200 bg-white text-slate-700 hover:border-orange-300';
+      }
+    });
+
+    const badge = document.getElementById('opt-spicy-badge');
+    if (badge) {
+      if (selectedIsExtraSpicy) {
+        const extra = (selectedExtraSpicyLevel - 5) * 2000;
+        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700';
+        badge.textContent = `Level ${selectedExtraSpicyLevel} (+${formatRp(extra)})`;
+      } else {
+        badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+        badge.textContent = `Level ${selectedSpicyLevel} (Gratis)`;
+      }
+    }
+  }
 
   function updateOptionSubtotal() {
     const qtyEl = document.getElementById('opt-qty-value');
     const subtotalEl = document.getElementById('opt-subtotal');
+    const priceEl = document.getElementById('opt-product-price');
     if (qtyEl) qtyEl.textContent = selectedOptionQty;
-    if (subtotalEl && selectedOptionProduct) {
-      const subtotal = selectedOptionProduct.price * selectedOptionQty;
-      subtotalEl.textContent = `Total: ${formatRp(subtotal)}`;
+    if (selectedOptionProduct) {
+      const extraPerPorsi = getSpicyExtraPerUnit();
+      const unitPrice = selectedOptionProduct.price + extraPerPorsi;
+      const subtotal = unitPrice * selectedOptionQty;
+      if (priceEl) {
+        if (extraPerPorsi > 0) {
+          priceEl.innerHTML = `${formatRp(unitPrice)} <span class="text-xs text-red-500 font-bold">(+${formatRp(extraPerPorsi)} Level ${getEffectiveSpicyLevel()})</span>`;
+        } else {
+          priceEl.textContent = `${formatRp(selectedOptionProduct.price)} / ${selectedOptionProduct.unit || 'Pcs'}`;
+        }
+      }
+      if (subtotalEl) {
+        subtotalEl.innerHTML = `Total: <span class="text-orange-600 font-extrabold">${formatRp(subtotal)}</span>`;
+      }
     }
   }
 
   function openProductOptionModal(product) {
     selectedOptionProduct = product;
     selectedOptionQty = 1;
+    selectedSpicyLevel = 1;
+    selectedIsExtraSpicy = false;
+    selectedExtraSpicyLevel = 6;
+    selectedSpicyNote = '';
 
     const modal = document.getElementById('product-option-modal');
     const imgWrap = document.getElementById('opt-product-img-wrap');
     const nameEl = document.getElementById('opt-product-name');
     const catEl = document.getElementById('opt-product-category');
     const priceEl = document.getElementById('opt-product-price');
+    const spicySec = document.getElementById('opt-spicy-section');
+    const optGeneralNote = document.getElementById('opt-item-note');
+    if (optGeneralNote) optGeneralNote.value = '';
 
     if (!modal) return;
 
@@ -341,9 +568,91 @@
       }
     }
 
+    // Reset & toggle variant section (Pizza & Burger)
+    const variantSec = document.getElementById('opt-variant-section');
+    if (variantSec) {
+      if (isVariantProduct(product)) {
+        variantSec.classList.remove('hidden');
+        const variants = getProductVariants(product);
+        selectedProductVariant = variants[0] || '';
+        selectedPizzaVariant = selectedProductVariant;
+
+        const vTitle = document.getElementById('opt-variant-title');
+        const vIcon = document.getElementById('opt-variant-icon');
+        const vDesc = document.getElementById('opt-variant-desc');
+        const vNoteInput = document.getElementById('opt-variant-note');
+
+        if (isPizzaProduct(product)) {
+          if (vTitle) vTitle.textContent = 'Pilih Varian Pizza';
+          if (vIcon) vIcon.textContent = '🍕';
+          if (vDesc) vDesc.textContent = 'Pilih salah satu varian rasa pizza favorit Anda:';
+          if (vNoteInput) {
+            vNoteInput.placeholder = 'Catatan pizza (opsional, misal: potong 8 slice, saus dipisah)';
+            vNoteInput.value = '';
+          }
+        } else if (isBurgerProduct(product)) {
+          if (vTitle) vTitle.textContent = 'Pilih Varian Burger';
+          if (vIcon) vIcon.textContent = '🍔';
+          if (vDesc) vDesc.textContent = 'Pilih salah satu varian rasa burger favorit Anda:';
+          if (vNoteInput) {
+            vNoteInput.placeholder = 'Catatan burger (opsional, misal: tanpa bawang, ekstra saus/mayo)';
+            vNoteInput.value = '';
+          }
+        } else if (isMartabakProduct(product)) {
+          if (vTitle) vTitle.textContent = 'Pilih Varian Maytabac';
+          if (vIcon) vIcon.textContent = '🥞';
+          if (vDesc) vDesc.textContent = 'Pilih salah satu varian topping maytabac favorit Anda:';
+          if (vNoteInput) {
+            vNoteInput.placeholder = 'Catatan maytabac (opsional, misal: susu kental manis dipisah)';
+            vNoteInput.value = '';
+          }
+        } else if (isRotiBakarProduct(product)) {
+          if (vTitle) vTitle.textContent = 'Pilih Varian Nti Bakay';
+          if (vIcon) vIcon.textContent = '🍞';
+          if (vDesc) vDesc.textContent = 'Pilih salah satu varian rasa roti bakar favorit Anda:';
+          if (vNoteInput) {
+            vNoteInput.placeholder = 'Catatan nti bakay (opsional, misal: bakar agak garing, margarin banyakin)';
+            vNoteInput.value = '';
+          }
+        } else {
+          if (vTitle) vTitle.textContent = 'Pilih Varian Menu';
+          if (vIcon) vIcon.textContent = '✨';
+          if (vDesc) vDesc.textContent = 'Pilih salah satu varian menu favorit Anda:';
+          if (vNoteInput) {
+            vNoteInput.placeholder = 'Catatan varian (opsional)';
+            vNoteInput.value = '';
+          }
+        }
+        renderProductVariantPills(product);
+      } else {
+        variantSec.classList.add('hidden');
+      }
+    }
+
+    // Reset & toggle spicy section
+    if (spicySec) {
+      if (isSpicyProduct(product)) {
+        spicySec.classList.remove('hidden');
+        const extraToggle = document.getElementById('opt-spicy-extra-toggle');
+        const extraWrap = document.getElementById('opt-spicy-extra-wrap');
+        const noteInput = document.getElementById('opt-spicy-note');
+        const levelDisplay = document.getElementById('opt-spicy-level-display');
+        const costText = document.getElementById('opt-spicy-extra-cost-text');
+
+        if (extraToggle) extraToggle.checked = false;
+        if (extraWrap) extraWrap.classList.add('hidden');
+        if (noteInput) noteInput.value = '';
+        if (levelDisplay) levelDisplay.textContent = 'Level 6';
+        if (costText) costText.textContent = `+${formatRp(2000)} / porsi`;
+        renderSpicyPillStates();
+      } else {
+        spicySec.classList.add('hidden');
+      }
+    }
+
     updateOptionSubtotal();
     modal.classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
 
   function closeProductOptionModal() {
@@ -373,7 +682,7 @@
 
     renderMultiOrderList();
     modal.classList.remove('hidden');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
 
   function closeMultiOrderModal() {
@@ -423,6 +732,62 @@
                 <span class="text-[9px] font-bold px-1.5 py-0.2 rounded text-white" style="background-color: ${p.categoryColor || '#f97316'}">${p.category || 'Menu'}</span>
               </div>
               <p class="text-xs text-orange-600 font-extrabold mt-0.5">${formatRp(p.price)} <span class="text-[10px] text-slate-400 font-normal">/${p.unit || 'Pcs'}</span></p>
+              ${isSpicyProduct(p) ? `
+                <div class="mt-1 flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold text-red-600">🌶️ Level:</span>
+                  <select class="multi-spicy-select text-[10px] font-bold text-red-700 bg-white border border-red-200 rounded-lg px-1.5 py-0.5 cursor-pointer outline-none focus:border-red-400" data-id="${p.id}">
+                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((lvl) => {
+                      const curLvl = multiOrderSpicySelections[p.id] || 1;
+                      const extra = lvl > 5 ? ` (+${formatRp((lvl - 5) * 2000)})` : ' (Gratis)';
+                      return `<option value="${lvl}" ${curLvl === lvl ? 'selected' : ''}>Lvl ${lvl}${extra}</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              ${isPizzaProduct(p) ? `
+                <div class="mt-1 flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold text-amber-700">🍕 Varian:</span>
+                  <select class="multi-pizza-select text-[10px] font-bold text-amber-800 bg-white border border-amber-200 rounded-lg px-1.5 py-0.5 cursor-pointer outline-none focus:border-amber-400" data-id="${p.id}">
+                    ${['Margherita', 'Pepperoni', 'Veggie', 'Seafood', 'Truffle'].map((v) => {
+                      const curV = multiOrderPizzaSelections[p.id] || 'Margherita';
+                      return `<option value="${v}" ${curV === v ? 'selected' : ''}>${v}</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              ${isBurgerProduct(p) ? `
+                <div class="mt-1 flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold text-amber-700">🍔 Varian:</span>
+                  <select class="multi-burger-select text-[10px] font-bold text-amber-800 bg-white border border-amber-200 rounded-lg px-1.5 py-0.5 cursor-pointer outline-none focus:border-amber-400" data-id="${p.id}">
+                    ${BURGER_VARIANTS.map((v) => {
+                      const curV = multiOrderBurgerSelections[p.id] || 'Doubble Cheese Burger';
+                      return `<option value="${v}" ${curV === v ? 'selected' : ''}>${v}</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              ${isMartabakProduct(p) ? `
+                <div class="mt-1 flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold text-amber-700">🥞 Topping:</span>
+                  <select class="multi-martabak-select text-[10px] font-bold text-amber-800 bg-white border border-amber-200 rounded-lg px-1.5 py-0.5 cursor-pointer outline-none focus:border-amber-400" data-id="${p.id}">
+                    ${MARTABAK_VARIANTS.map((v) => {
+                      const curV = multiOrderMartabakSelections[p.id] || 'Kacang';
+                      return `<option value="${v}" ${curV === v ? 'selected' : ''}>${v}</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+              ` : ''}
+              ${isRotiBakarProduct(p) ? `
+                <div class="mt-1 flex items-center gap-1.5">
+                  <span class="text-[10px] font-bold text-amber-700">🍞 Rasa:</span>
+                  <select class="multi-rotibakar-select text-[10px] font-bold text-amber-800 bg-white border border-amber-200 rounded-lg px-1.5 py-0.5 cursor-pointer outline-none focus:border-amber-400" data-id="${p.id}">
+                    ${ROTI_BAKAR_VARIANTS.map((v) => {
+                      const curV = multiOrderRotiBakarSelections[p.id] || 'Coklat';
+                      return `<option value="${v}" ${curV === v ? 'selected' : ''}>${v}</option>`;
+                    }).join('')}
+                  </select>
+                </div>
+              ` : ''}
             </div>
           </div>
 
@@ -436,10 +801,30 @@
             </button>
           </div>
         </div>
+        <div class="px-2 pb-2 -mt-1 ${isSelected ? 'bg-orange-50/70 border-x border-b border-orange-200/80 rounded-b-2xl' : ''}">
+          <input type="text" class="multi-note-input w-full text-[11px] bg-white border border-slate-200 rounded-lg px-2.5 py-1 placeholder:text-slate-400 outline-none focus:border-orange-400 transition" placeholder="📝 Request catatan untuk ${p.name} (opsional)..." data-id="${p.id}" value="${multiOrderNotes[p.id] || ''}" />
+        </div>
       `;
     }).join('');
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+
+    // Spicy select in multi-order
+    container.querySelectorAll('.multi-spicy-select').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const id = sel.dataset.id;
+        multiOrderSpicySelections[id] = parseInt(sel.value, 10) || 1;
+        updateMultiOrderSummary();
+      });
+    });
+
+    // Pizza variant select in multi-order
+    container.querySelectorAll('.multi-pizza-select').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        const id = sel.dataset.id;
+        multiOrderPizzaSelections[id] = sel.value || 'Margherita';
+      });
+    });
 
     // Checkbox toggles
     container.querySelectorAll('.multi-check').forEach((cb) => {
@@ -495,7 +880,10 @@
       const prod = allProducts.find((p) => p.id === id);
       if (prod && qty > 0) {
         totalItems += qty;
-        totalPrice += prod.price * qty;
+        const isSpicy = isSpicyProduct(prod);
+        const spicyLvl = isSpicy ? (multiOrderSpicySelections[id] || 1) : null;
+        const extra = (spicyLvl && spicyLvl > 5) ? (spicyLvl - 5) * 2000 : 0;
+        totalPrice += (prod.price + extra) * qty;
       }
     });
 
@@ -514,20 +902,28 @@
       const prod = allProducts.find((p) => p.id === id);
       const qty = multiOrderSelections[id];
       if (prod && qty > 0) {
-        const existing = cart.find((it) => it.id === prod.id);
-        if (existing) {
-          existing.qty = qty;
-        } else {
-          cart.push({
-            id: prod.id,
-            name: prod.name,
-            price: prod.price,
-            emoji: prod.emoji || '🛍️',
-            image: prod.image || '',
-            unit: prod.unit || 'Pcs',
-            qty: qty,
-          });
-        }
+        const isSpicy = isSpicyProduct(prod);
+        const isPizza = isPizzaProduct(prod);
+        const isBurger = isBurgerProduct(prod);
+        const spicyLvl = isSpicy ? (multiOrderSpicySelections[id] || 1) : null;
+        const extra = (spicyLvl && spicyLvl > 5) ? (spicyLvl - 5) * 2000 : 0;
+        const variant = isPizza 
+          ? (multiOrderPizzaSelections[id] || 'Margherita') 
+          : isBurger 
+            ? (multiOrderBurgerSelections[id] || 'Doubble Cheese Burger') 
+            : isMartabakProduct(prod)
+              ? (multiOrderMartabakSelections[id] || 'Kacang')
+              : isRotiBakarProduct(prod)
+                ? (multiOrderRotiBakarSelections[id] || 'Coklat')
+                : null;
+        addToCart(prod, qty, false, {
+          variant: variant,
+          spicyLevel: spicyLvl,
+          extraPrice: extra,
+          note: multiOrderNotes[id] || '',
+          spicyNote: multiOrderNotes[id] || '',
+          variantNote: multiOrderNotes[id] || '',
+        });
       }
     });
 
@@ -559,16 +955,51 @@
     } catch (e) {}
   }
 
-  function addToCart(product, qty = 1, showFeedback = true) {
+  function addToCart(product, qty = 1, showFeedback = true, options = null) {
     const quantity = Math.max(1, parseInt(qty, 10) || 1);
-    const existing = cart.find((it) => it.id === product.id);
+    const isSpicy = isSpicyProduct(product);
+    const isPizza = isPizzaProduct(product);
+    const isBurger = isBurgerProduct(product);
+    const isMartabak = isMartabakProduct(product);
+    const spicyLevel = (options && options.spicyLevel != null) 
+      ? options.spicyLevel 
+      : (isSpicy ? 1 : null);
+    const extraPrice = (spicyLevel && spicyLevel > 5) ? (spicyLevel - 5) * 2000 : 0;
+    const note = (options && options.note) 
+      ? options.note.trim() 
+      : (options && options.spicyNote) 
+        ? options.spicyNote.trim() 
+        : (options && options.variantNote) 
+          ? options.variantNote.trim() 
+          : '';
+    const variant = (options && options.variant) ? options.variant : (isPizza ? 'Margherita' : isBurger ? 'Doubble Cheese Burger' : isMartabak ? 'Kacang' : null);
+
+    const noteSlug = note ? '_' + note.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) : '';
+    let cartItemId = product.id;
+    if (variant) {
+      cartItemId = `${product.id}_var_${variant.toLowerCase()}${noteSlug}`;
+    } else if (spicyLevel) {
+      cartItemId = `${product.id}_lvl${spicyLevel}${noteSlug}`;
+    } else if (note) {
+      cartItemId = `${product.id}${noteSlug}`;
+    }
+
+    const existing = cart.find((it) => (it.cartItemId || it.id) === cartItemId);
     if (existing) {
       existing.qty += quantity;
     } else {
       cart.push({
         id: product.id,
+        cartItemId: cartItemId,
         name: product.name,
-        price: product.price,
+        price: product.price + extraPrice,
+        basePrice: product.price,
+        variant: variant,
+        variantNote: note,
+        spicyLevel: spicyLevel,
+        extraPrice: extraPrice,
+        spicyNote: note,
+        note: note,
         emoji: product.emoji || '🛍️',
         image: product.image || '',
         unit: product.unit || 'Pcs',
@@ -579,17 +1010,20 @@
     renderCart();
     filterAndRenderProducts();
     if (showFeedback) {
-      showToast(`✓ "${product.name}" (${quantity} ${product.unit || 'item'}) masuk keranjang`);
+      const levelText = spicyLevel ? ` [Level ${spicyLevel}${extraPrice > 0 ? ` +${formatRp(extraPrice)}` : ''}]` : '';
+      const varText = variant ? ` [Varian: ${variant}]` : '';
+      const noteText = note ? ` [Catatan: "${note}"]` : '';
+      showToast(`✓ "${product.name}${varText}${levelText}${noteText}" (${quantity} ${product.unit || 'item'}) masuk keranjang`);
     }
   }
 
-  function updateCartQty(id, delta) {
-    const item = cart.find((it) => it.id === id);
+  function updateCartQty(key, delta) {
+    const item = cart.find((it) => (it.cartItemId || it.id) === key);
     if (!item) return;
 
     item.qty += delta;
     if (item.qty <= 0) {
-      cart = cart.filter((it) => it.id !== id);
+      cart = cart.filter((it) => (it.cartItemId || it.id) !== key);
     }
     saveCartToStorage();
     renderCart();
@@ -640,38 +1074,93 @@
       return;
     }
 
-    container.innerHTML = cart.map((it) => `
-      <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shrink-0 shadow-xs border border-slate-100">
-            ${it.emoji || '🛍️'}
+    container.innerHTML = cart.map((it) => {
+      const itemKey = it.cartItemId || it.id;
+      const spicyBadgeHtml = it.spicyLevel ? `
+        <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+          <span class="inline-flex items-center gap-0.5 text-[10px] font-extrabold px-1.5 py-0.2 rounded-md ${it.spicyLevel > 5 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-orange-100 text-orange-800'}">
+            🌶️ Level ${it.spicyLevel} ${it.extraPrice > 0 ? `(+${formatRp(it.extraPrice)})` : ''}
+          </span>
+          ${it.spicyNote ? `<span class="text-[10px] text-slate-500 italic max-w-[130px] truncate" title="${it.spicyNote}">"${it.spicyNote}"</span>` : ''}
+        </div>
+      ` : '';
+      const varIcon = isPizzaProduct(it) ? '🍕' : isBurgerProduct(it) ? '🍔' : isMartabakProduct(it) ? '🥞' : isRotiBakarProduct(it) ? '🍞' : '✨';
+      const variantBadgeHtml = it.variant ? `
+        <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+          <span class="inline-flex items-center gap-0.5 text-[10px] font-extrabold px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200/80">
+            ${varIcon} ${it.variant}
+          </span>
+          ${it.variantNote ? `<span class="text-[10px] text-slate-500 italic max-w-[130px] truncate" title="${it.variantNote}">"${it.variantNote}"</span>` : ''}
+        </div>
+      ` : '';
+
+      const itemNote = it.note || it.spicyNote || it.variantNote || '';
+      const noteBadgeHtml = itemNote ? `
+        <div class="flex items-center gap-1 text-[10px] text-slate-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/70 mt-1 max-w-full">
+          <span class="shrink-0">📝</span>
+          <span class="italic truncate flex-1" title="${itemNote}">"${itemNote}"</span>
+          <button type="button" class="btn-edit-cart-note text-[10px] text-orange-600 hover:underline font-bold shrink-0 ml-1" data-key="${itemKey}">Ubah</button>
+        </div>
+      ` : `
+        <button type="button" class="btn-edit-cart-note text-[10px] text-slate-400 hover:text-orange-600 flex items-center gap-0.5 mt-1 font-medium" data-key="${itemKey}">
+          <i data-lucide="edit-3" class="w-3 h-3"></i>
+          <span>+ Catatan</span>
+        </button>
+      `;
+
+      return `
+        <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200/80 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-xl shrink-0 shadow-xs border border-slate-100">
+              ${it.emoji || '🛍️'}
+            </div>
+            <div class="min-w-0 flex-1">
+              <h5 class="text-xs font-bold text-slate-900 leading-tight truncate">${it.name}</h5>
+              ${variantBadgeHtml}
+              ${spicyBadgeHtml}
+              ${noteBadgeHtml}
+              <p class="text-xs text-orange-600 font-extrabold mt-0.5">${formatRp(it.price)} <span class="text-[10px] text-slate-400 font-normal">/${it.unit}</span></p>
+            </div>
           </div>
-          <div>
-            <h5 class="text-xs font-bold text-slate-900 leading-tight">${it.name}</h5>
-            <p class="text-xs text-orange-600 font-extrabold mt-0.5">${formatRp(it.price)} <span class="text-[10px] text-slate-400 font-normal">/${it.unit}</span></p>
+
+          <div class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs shrink-0">
+            <button type="button" class="btn-qty-minus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-key="${itemKey}">
+              <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+            </button>
+            <span class="w-6 text-center text-xs font-bold text-slate-800">${it.qty}</span>
+            <button type="button" class="btn-qty-plus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-key="${itemKey}">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
+      `;
+    }).join('');
 
-        <div class="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs">
-          <button type="button" class="btn-qty-minus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-id="${it.id}">
-            <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-          </button>
-          <span class="w-6 text-center text-xs font-bold text-slate-800">${it.qty}</span>
-          <button type="button" class="btn-qty-plus text-slate-500 hover:text-slate-800 p-0.5 rounded transition" data-id="${it.id}">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
 
-    if (window.lucide) lucide.createIcons();
+    container.querySelectorAll('.btn-edit-cart-note').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        const it = cart.find((x) => (x.cartItemId || x.id) === key);
+        if (!it) return;
+        const curNote = it.note || it.spicyNote || it.variantNote || '';
+        const newNote = prompt(`Request catatan untuk ${it.name}:`, curNote);
+        if (newNote !== null) {
+          it.note = newNote.trim();
+          it.spicyNote = it.note;
+          it.variantNote = it.note;
+          saveCartToStorage();
+          renderCart();
+        }
+      });
+    });
 
     container.querySelectorAll('.btn-qty-minus').forEach((btn) => {
-      btn.addEventListener('click', () => updateCartQty(btn.dataset.id, -1));
+      btn.addEventListener('click', () => updateCartQty(btn.dataset.key, -1));
     });
 
     container.querySelectorAll('.btn-qty-plus').forEach((btn) => {
-      btn.addEventListener('click', () => updateCartQty(btn.dataset.id, 1));
+      btn.addEventListener('click', () => updateCartQty(btn.dataset.key, 1));
     });
   }
 
@@ -783,7 +1272,7 @@
           }
         } catch (e) {}
 
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
       },
       (err) => {
         let errMsg = 'Gagal mengakses GPS.';
@@ -851,7 +1340,7 @@
     const phone = (phoneInput ? phoneInput.value : '').trim();
 
     const methodInput = document.querySelector('input[name="order-method"]:checked');
-    const method = methodInput ? methodInput.value : 'Ambil di Warung';
+    const method = methodInput ? methodInput.value : 'Makan di Tempat';
 
     const address = getFinalDeliveryAddress(method);
     if (method === 'Antar / Kirim' && address === null) {
@@ -869,13 +1358,28 @@
 
     let msg = `Halo ${storeInfo.storeName || 'Warung Cemilan'}! Saya ingin memesan:\n\n`;
     cart.forEach((it, idx) => {
-      msg += `${idx + 1}. ${it.name} (${it.qty}x) = ${formatRp(it.price * it.qty)}\n`;
+      const varDesc = it.variant ? ` [Varian: ${it.variant}]` : '';
+      const spicyDesc = it.spicyLevel 
+        ? ` [Level ${it.spicyLevel}${it.extraPrice > 0 ? ` (+Rp ${it.extraPrice.toLocaleString('id-ID')}/porsi)` : ''}]` 
+        : '';
+      const noteDesc = (it.note || it.spicyNote || it.variantNote) ? ` (Catatan: ${it.note || it.spicyNote || it.variantNote})` : '';
+      msg += `${idx + 1}. ${it.name}${varDesc}${spicyDesc}${noteDesc} (${it.qty}x) = ${formatRp(it.price * it.qty)}\n`;
     });
     msg += `\n*Total Item:* ${totalQty} item\n`;
     msg += `*Total Pembayaran:* ${formatRp(totalPrice)}\n\n`;
     msg += `*Nama Pemesan:* ${name}\n`;
     if (phone) msg += `*No. HP/WA:* ${phone}\n`;
-    msg += `*Metode Transaksi:* ${method}\n`;
+    let methodDisplay = method;
+    if (method === 'Makan di Tempat') {
+      const tableInput = document.getElementById('order-table-no');
+      const tableVal = (tableInput ? tableInput.value : '').trim();
+      methodDisplay = `Makan di Tempat 🍽️${tableVal ? ` (${tableVal})` : ''}`;
+    } else if (method === 'Take Away') {
+      methodDisplay = 'Take Away (Bungkus) 🥡';
+    } else if (method === 'Antar / Kirim') {
+      methodDisplay = 'Antar / Kirim (Delivery) 🛵';
+    }
+    msg += `*Layanan / Metode:* ${methodDisplay}\n`;
     if (method === 'Antar / Kirim' && address) {
       msg += `*Alamat / Titik Pengantaran:* ${address}\n`;
     }
@@ -913,7 +1417,7 @@
     }
 
     const methodInput = document.querySelector('input[name="order-method"]:checked');
-    const method = methodInput ? methodInput.value : 'Ambil di Warung';
+    const method = methodInput ? methodInput.value : 'Makan di Tempat';
 
     const address = getFinalDeliveryAddress(method);
     if (method === 'Antar / Kirim' && address === null) {
@@ -929,13 +1433,19 @@
     const items = cart.map((it) => ({
       productId: it.id,
       qty: it.qty,
+      variant: it.variant || null,
+      note: it.note || it.variantNote || it.spicyNote || '',
+      variantNote: it.note || it.variantNote || '',
+      spicyLevel: it.spicyLevel || null,
+      extraPrice: it.extraPrice || 0,
+      spicyNote: it.note || it.spicyNote || '',
     }));
 
     const btnSubmit = document.getElementById('btn-submit-web-order');
     if (btnSubmit) {
       btnSubmit.disabled = true;
       btnSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memproses Pesanan...</span>';
-      if (window.lucide) lucide.createIcons();
+      if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
     }
 
     try {
@@ -946,6 +1456,7 @@
           customerName: name,
           customerPhone: phone,
           deliveryMethod: method,
+          tableNo: (method === 'Makan di Tempat' && document.getElementById('order-table-no')) ? document.getElementById('order-table-no').value.trim() : '',
           address,
           paymentMethod,
           notes,
@@ -978,7 +1489,7 @@
       if (btnSubmit) {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4"></i><span>Pesan Langsung di Web</span>';
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
       }
     }
   }
@@ -1018,7 +1529,7 @@
                 <i data-lucide="map-pin" class="w-3 h-3 text-orange-500"></i> Buka Titik di Google Maps ↗
               </a>
             `;
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
           } else {
             addressEl.textContent = order.address;
           }
@@ -1266,7 +1777,7 @@
       `;
     }).join('');
 
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
   }
 
   function initStarPicker() {
@@ -1453,9 +1964,10 @@
     if (btnSubmitOrder) btnSubmitOrder.addEventListener('click', submitOrderToWhatsApp);
     if (btnSubmitWebOrder) btnSubmitWebOrder.addEventListener('click', submitWebOrder);
 
-    // Toggle Delivery Address Input
+    // Toggle Delivery Address & Table No Input
     const methodRadios = document.querySelectorAll('input[name="order-method"]');
     const wrapAddress = document.getElementById('wrap-order-address');
+    const wrapTableNo = document.getElementById('wrap-table-no');
     methodRadios.forEach((r) => {
       r.addEventListener('change', () => {
         if (wrapAddress) {
@@ -1463,6 +1975,13 @@
             wrapAddress.classList.remove('hidden');
           } else {
             wrapAddress.classList.add('hidden');
+          }
+        }
+        if (wrapTableNo) {
+          if (r.value === 'Makan di Tempat') {
+            wrapTableNo.classList.remove('hidden');
+          } else {
+            wrapTableNo.classList.add('hidden');
           }
         }
       });
@@ -1532,10 +2051,104 @@
         updateOptionSubtotal();
       });
     }
+    // Spicy level pill selections
+    const spicyPills = document.querySelectorAll('#opt-spicy-preset-group .btn-spicy-lvl');
+    spicyPills.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedSpicyLevel = parseInt(btn.dataset.lvl, 10);
+        selectedIsExtraSpicy = false;
+        const extraToggle = document.getElementById('opt-spicy-extra-toggle');
+        const extraWrap = document.getElementById('opt-spicy-extra-wrap');
+        if (extraToggle) extraToggle.checked = false;
+        if (extraWrap) extraWrap.classList.add('hidden');
+        renderSpicyPillStates();
+        updateOptionSubtotal();
+      });
+    });
+
+    const optSpicyExtraToggle = document.getElementById('opt-spicy-extra-toggle');
+    const optSpicyExtraWrap = document.getElementById('opt-spicy-extra-wrap');
+    if (optSpicyExtraToggle) {
+      optSpicyExtraToggle.addEventListener('change', (e) => {
+        selectedIsExtraSpicy = e.target.checked;
+        if (selectedIsExtraSpicy) {
+          if (optSpicyExtraWrap) optSpicyExtraWrap.classList.remove('hidden');
+          selectedExtraSpicyLevel = Math.max(6, selectedExtraSpicyLevel || 6);
+          const lvlDisp = document.getElementById('opt-spicy-level-display');
+          const costText = document.getElementById('opt-spicy-extra-cost-text');
+          if (lvlDisp) lvlDisp.textContent = `Level ${selectedExtraSpicyLevel}`;
+          if (costText) costText.textContent = `+${formatRp((selectedExtraSpicyLevel - 5) * 2000)} / porsi`;
+        } else {
+          if (optSpicyExtraWrap) optSpicyExtraWrap.classList.add('hidden');
+        }
+        renderSpicyPillStates();
+        updateOptionSubtotal();
+      });
+    }
+
+    const btnSpicyMinus = document.getElementById('btn-spicy-minus');
+    const btnSpicyPlus = document.getElementById('btn-spicy-plus');
+    if (btnSpicyMinus) {
+      btnSpicyMinus.addEventListener('click', () => {
+        if (selectedExtraSpicyLevel > 6) {
+          selectedExtraSpicyLevel -= 1;
+        } else {
+          selectedExtraSpicyLevel = 6;
+          selectedIsExtraSpicy = false;
+          selectedSpicyLevel = 5;
+          if (optSpicyExtraToggle) optSpicyExtraToggle.checked = false;
+          if (optSpicyExtraWrap) optSpicyExtraWrap.classList.add('hidden');
+        }
+        const lvlDisp = document.getElementById('opt-spicy-level-display');
+        const costText = document.getElementById('opt-spicy-extra-cost-text');
+        if (lvlDisp) lvlDisp.textContent = `Level ${selectedExtraSpicyLevel}`;
+        if (costText) costText.textContent = `+${formatRp((selectedExtraSpicyLevel - 5) * 2000)} / porsi`;
+        renderSpicyPillStates();
+        updateOptionSubtotal();
+      });
+    }
+    if (btnSpicyPlus) {
+      btnSpicyPlus.addEventListener('click', () => {
+        selectedExtraSpicyLevel += 1;
+        const lvlDisp = document.getElementById('opt-spicy-level-display');
+        const costText = document.getElementById('opt-spicy-extra-cost-text');
+        if (lvlDisp) lvlDisp.textContent = `Level ${selectedExtraSpicyLevel}`;
+        if (costText) costText.textContent = `+${formatRp((selectedExtraSpicyLevel - 5) * 2000)} / porsi`;
+        renderSpicyPillStates();
+        updateOptionSubtotal();
+      });
+    }
+
+    // Pizza variant buttons listener
+    const pizzaVariantBtns = document.querySelectorAll('#opt-variant-group .btn-pizza-variant');
+    pizzaVariantBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedPizzaVariant = btn.dataset.variant || 'Margherita';
+        renderPizzaVariantPillStates();
+      });
+    });
+
     if (btnOptAddToCart) {
       btnOptAddToCart.addEventListener('click', () => {
         if (selectedOptionProduct) {
-          addToCart(selectedOptionProduct, selectedOptionQty, true);
+          const isSpicy = isSpicyProduct(selectedOptionProduct);
+          const hasVar = isVariantProduct(selectedOptionProduct);
+          const spicyLevel = isSpicy ? (selectedIsExtraSpicy ? selectedExtraSpicyLevel : selectedSpicyLevel) : null;
+          const extraPrice = (spicyLevel && spicyLevel > 5) ? (spicyLevel - 5) * 2000 : 0;
+          const generalNote = (document.getElementById('opt-item-note')?.value || '').trim();
+          const spicyNote = isSpicy ? (document.getElementById('opt-spicy-note')?.value || '').trim() : '';
+          const variantNote = hasVar ? (document.getElementById('opt-variant-note')?.value || '').trim() : '';
+          const finalNote = generalNote || spicyNote || variantNote || '';
+          const variant = hasVar ? selectedProductVariant : null;
+
+          addToCart(selectedOptionProduct, selectedOptionQty, true, {
+            variant,
+            variantNote: finalNote,
+            spicyLevel,
+            extraPrice,
+            spicyNote: finalNote,
+            note: finalNote,
+          });
           closeProductOptionModal();
         }
       });
@@ -1543,7 +2156,24 @@
     if (btnOptOrderNow) {
       btnOptOrderNow.addEventListener('click', () => {
         if (selectedOptionProduct) {
-          addToCart(selectedOptionProduct, selectedOptionQty, false);
+          const isSpicy = isSpicyProduct(selectedOptionProduct);
+          const hasVar = isVariantProduct(selectedOptionProduct);
+          const spicyLevel = isSpicy ? (selectedIsExtraSpicy ? selectedExtraSpicyLevel : selectedSpicyLevel) : null;
+          const extraPrice = (spicyLevel && spicyLevel > 5) ? (spicyLevel - 5) * 2000 : 0;
+          const generalNote = (document.getElementById('opt-item-note')?.value || '').trim();
+          const spicyNote = isSpicy ? (document.getElementById('opt-spicy-note')?.value || '').trim() : '';
+          const variantNote = hasVar ? (document.getElementById('opt-variant-note')?.value || '').trim() : '';
+          const finalNote = generalNote || spicyNote || variantNote || '';
+          const variant = hasVar ? selectedProductVariant : null;
+
+          addToCart(selectedOptionProduct, selectedOptionQty, false, {
+            variant,
+            variantNote: finalNote,
+            spicyLevel,
+            extraPrice,
+            spicyNote: finalNote,
+            note: finalNote,
+          });
           closeProductOptionModal();
           toggleCart(true);
           showToast(`🛒 Silakan lengkapi pesanan Anda`);

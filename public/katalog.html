@@ -540,17 +540,33 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pengambilan</label>
-            <div class="grid grid-cols-2 gap-2">
-              <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
-                <input type="radio" name="order-method" value="Ambil di Warung" checked class="text-orange-500 focus:ring-orange-400" />
-                <span>Ambil Sendiri</span>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilihan Layanan / Metode Pesanan <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <label class="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50/40 transition text-center select-none has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/80 has-[:checked]:text-orange-700">
+                <input type="radio" name="order-method" value="Makan di Tempat" checked class="sr-only" />
+                <span class="text-base mb-0.5">🍽️</span>
+                <span class="text-[11px] font-bold block leading-tight">Makan di Tempat</span>
+                <span class="text-[9px] text-slate-400 leading-none mt-0.5">Dine In</span>
               </label>
-              <label class="flex items-center gap-2 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50 transition text-xs font-medium">
-                <input type="radio" name="order-method" value="Antar / Kirim" class="text-orange-500 focus:ring-orange-400" />
-                <span>Antar / Kirim</span>
+              <label class="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50/40 transition text-center select-none has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/80 has-[:checked]:text-orange-700">
+                <input type="radio" name="order-method" value="Take Away" class="sr-only" />
+                <span class="text-base mb-0.5">🥡</span>
+                <span class="text-[11px] font-bold block leading-tight">Take Away</span>
+                <span class="text-[9px] text-slate-400 leading-none mt-0.5">Bungkus</span>
+              </label>
+              <label class="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 cursor-pointer hover:border-orange-400 hover:bg-orange-50/40 transition text-center select-none has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50/80 has-[:checked]:text-orange-700">
+                <input type="radio" name="order-method" value="Antar / Kirim" class="sr-only" />
+                <span class="text-base mb-0.5">🛵</span>
+                <span class="text-[11px] font-bold block leading-tight">Antar / Kirim</span>
+                <span class="text-[9px] text-slate-400 leading-none mt-0.5">Delivery</span>
               </label>
             </div>
+          </div>
+
+          <!-- Input Nomor Meja (Khusus Makan di Tempat) -->
+          <div id="wrap-table-no" class="space-y-1">
+            <label class="block text-xs font-semibold text-slate-700">Nomor Meja (Khusus Makan di Tempat)</label>
+            <input type="text" id="order-table-no" placeholder="Contoh: Meja 03 (opsional)" class="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-100 outline-none transition" />
           </div>
 
           <!-- Input Alamat & Share Location (Muncul jika Antar dipilih) -->
@@ -656,7 +672,7 @@
 
   <!-- ================= MODAL PILIH OPSI PESAN PRODUK ================= -->
   <div id="product-option-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-100 modal-card relative space-y-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-100 modal-card relative space-y-3.5 max-h-[92vh] overflow-y-auto">
       
       <!-- Close button -->
       <button type="button" id="btn-close-product-option-modal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition">
@@ -673,6 +689,108 @@
           <h3 id="opt-product-name" class="font-bold text-slate-900 text-sm sm:text-base leading-snug line-clamp-2">Nama Produk</h3>
           <p id="opt-product-price" class="text-orange-600 font-extrabold text-sm sm:text-base mt-0.5">Rp 0</p>
         </div>
+      </div>
+
+      <!-- Spicy Level Section (Khusus Enoci Pedec, Chikiwings, Bacic) -->
+      <div id="opt-spicy-section" class="hidden p-3.5 bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-red-50/80 rounded-2xl border border-red-200/90 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-red-600 font-extrabold text-xs">
+            <span>🌶️</span>
+            <span>Pilih Level Kepedasan</span>
+          </div>
+          <span id="opt-spicy-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Lvl 1-5 Gratis</span>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight">Pilih level 1-5 (gratis). Request level tambahan (&gt; 5) dikenakan biaya +Rp 2.000 / level.</p>
+
+        <!-- Pilihan Tombol Level 1-5 -->
+        <div class="grid grid-cols-5 gap-1.5" id="opt-spicy-preset-group">
+          <button type="button" class="btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-orange-500 bg-orange-500 text-white shadow-xs" data-lvl="1">
+            <span>Lvl 1</span>
+            <span class="text-[9px] font-medium opacity-80">🌶️</span>
+          </button>
+          <button type="button" class="btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-slate-200 bg-white text-slate-700 hover:border-orange-300" data-lvl="2">
+            <span>Lvl 2</span>
+            <span class="text-[9px] font-medium opacity-80">🌶️🌶️</span>
+          </button>
+          <button type="button" class="btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-slate-200 bg-white text-slate-700 hover:border-orange-300" data-lvl="3">
+            <span>Lvl 3</span>
+            <span class="text-[9px] font-medium opacity-80">🌶️🌶️</span>
+          </button>
+          <button type="button" class="btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-slate-200 bg-white text-slate-700 hover:border-orange-300" data-lvl="4">
+            <span>Lvl 4</span>
+            <span class="text-[9px] font-medium opacity-80">🔥</span>
+          </button>
+          <button type="button" class="btn-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-slate-200 bg-white text-slate-700 hover:border-orange-300" data-lvl="5">
+            <span>Lvl 5</span>
+            <span class="text-[9px] font-medium opacity-80">🔥🔥</span>
+          </button>
+        </div>
+
+        <!-- Request Tambahan Level (> Level 5) -->
+        <div class="pt-2 border-t border-red-100/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="opt-spicy-extra-toggle" class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer" />
+              <span class="text-xs font-bold text-slate-800">Request Tambahan Level (&gt; 5)</span>
+            </label>
+            <span class="text-[10px] font-bold text-red-600 bg-red-100/80 px-2 py-0.5 rounded-full">+Rp 2.000 / lvl</span>
+          </div>
+
+          <!-- Stepper Request Level Tambahan -->
+          <div id="opt-spicy-extra-wrap" class="hidden flex items-center justify-between bg-white p-2.5 rounded-xl border border-red-200 shadow-2xs">
+            <div>
+              <span class="text-xs font-bold text-slate-800 block">Level Diminta:</span>
+              <span id="opt-spicy-extra-cost-text" class="text-[10px] font-extrabold text-red-600">+Rp 2.000 / porsi</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-red-50/60 px-2 py-1 rounded-lg border border-red-200">
+              <button type="button" id="btn-spicy-minus" class="w-7 h-7 rounded-md hover:bg-white text-slate-600 flex items-center justify-center font-bold active:scale-95 transition">
+                <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+              </button>
+              <span id="opt-spicy-level-display" class="w-16 text-center text-xs font-black text-red-600">Level 6</span>
+              <button type="button" id="btn-spicy-plus" class="w-7 h-7 rounded-md hover:bg-white text-slate-600 flex items-center justify-center font-bold active:scale-95 transition">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catatan Pedas Khusus (Opsional) -->
+        <div class="pt-1">
+          <input type="text" id="opt-spicy-note" placeholder="Catatan kepedasan (opsional, misal: cabai bubuk dipisah)" class="w-full px-3 py-2 text-xs bg-white border border-red-200 rounded-xl outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder:text-slate-400 text-slate-800 transition" />
+        </div>
+      </div>
+
+      <!-- Variant Section (Khusus Pyezza & Bulgel) -->
+      <div id="opt-variant-section" class="hidden p-3.5 bg-gradient-to-br from-amber-50/80 via-yellow-50/50 to-orange-50/80 rounded-2xl border border-amber-200/90 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-amber-700 font-extrabold text-xs">
+            <span id="opt-variant-icon">🍕</span>
+            <span id="opt-variant-title">Pilih Varian Menu</span>
+          </div>
+          <span id="opt-variant-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">5 Pilihan Rasa</span>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-tight" id="opt-variant-desc">Pilih salah satu varian favorit Anda:</p>
+
+        <!-- Pilihan Varian Radio Pills (Rendered dynamically) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" id="opt-variant-group">
+        </div>
+
+        <!-- Catatan Varian (Opsional) -->
+        <div class="pt-1">
+          <input type="text" id="opt-variant-note" placeholder="Catatan varian (opsional, misal: tanpa sayur, saus dipisah)" class="w-full px-3 py-2 text-xs bg-white border border-amber-200 rounded-xl outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 placeholder:text-slate-400 text-slate-800 transition" />
+        </div>
+      </div>
+
+      <!-- Request Catatan Pesanan (Untuk Semua Produk) -->
+      <div id="opt-note-section" class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label for="opt-item-note" class="flex items-center gap-1.5 text-slate-700 font-extrabold text-xs">
+            <span>📝</span>
+            <span>Request Catatan Pesanan (Opsional)</span>
+          </label>
+          <span class="text-[10px] text-slate-400 font-medium">Bebas Request</span>
+        </div>
+        <input type="text" id="opt-item-note" placeholder="Misal: tidak pakai es, pisah sambal, kuah dibanyakin, dsb." class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder:text-slate-400 text-slate-800 transition" />
       </div>
 
       <!-- Quantity Selector -->

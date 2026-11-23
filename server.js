@@ -132,11 +132,22 @@ app.post('/api/public/reviews', async (req, res) => {
 app.post('/api/public/orders', async (req, res) => {
   await Promise.all([db.syncSettings(), db.syncCollection('products'), db.syncCollection('orders')]);
   const d = db.getDB();
-  const { customerName, customerPhone, deliveryMethod, address, paymentMethod, notes, items } = req.body || {};
+  const { customerName, customerPhone, deliveryMethod, address, tableNo, paymentMethod, notes, items } = req.body || {};
 
   const cleanName = String(customerName || '').trim();
   const cleanPhone = String(customerPhone || '').replace(/[^0-9+\s-]/g, '').trim();
-  const cleanMethod = deliveryMethod === 'Antar / Kirim' ? 'Antar / Kirim' : 'Ambil di Warung';
+  let cleanMethod = 'Makan di Tempat';
+  if (deliveryMethod === 'Take Away') {
+    cleanMethod = 'Take Away';
+  } else if (deliveryMethod === 'Antar / Kirim') {
+    cleanMethod = 'Antar / Kirim';
+  } else if (deliveryMethod === 'Makan di Tempat') {
+    cleanMethod = 'Makan di Tempat';
+  } else {
+    cleanMethod = 'Take Away';
+  }
+
+  const cleanTableNo = (cleanMethod === 'Makan di Tempat' && tableNo) ? String(tableNo).trim() : '';
   const cleanAddress = cleanMethod === 'Antar / Kirim' ? String(address || '').trim() : '';
   const ALLOWED_PAYMENT = ['QRIS', 'Transfer', 'Tunai'];
   const cleanPayment = ALLOWED_PAYMENT.includes(paymentMethod) ? paymentMethod : 'QRIS';
@@ -171,13 +182,51 @@ app.post('/api/public/orders', async (req, res) => {
       return res.status(400).json({ error: `Stok ${prod.name} tidak mencukupi (sisa ${prod.stock}).` });
     }
 
-    const itemTotal = prod.price * qty;
+    // Perhitungan Level Kepedasan (Khusus Enoci Pedec, Chikiwings, Bacic)
+    const isSpicy = prod.hasSpicyLevel || (db.isSpicyProduct && db.isSpicyProduct(prod));
+    let spicyLevel = null;
+    let extraPrice = 0;
+    if (isSpicy && it.spicyLevel != null) {
+      spicyLevel = parseInt(it.spicyLevel, 10);
+      if (!isNaN(spicyLevel) && spicyLevel >= 1) {
+        if (spicyLevel > 5) {
+          extraPrice = (spicyLevel - 5) * 2000;
+        }
+      } else {
+        spicyLevel = null;
+      }
+    }
+
+    const isVariantItem = prod.hasVariants || (db.isPizzaProduct && db.isPizzaProduct(prod)) || (db.isBurgerProduct && db.isBurgerProduct(prod)) || (db.isMartabakProduct && db.isMartabakProduct(prod)) || (db.isRotiBakarProduct && db.isRotiBakarProduct(prod)) || (db.isVariantProduct && db.isVariantProduct(prod));
+    const variant = (isVariantItem && it.variant) ? String(it.variant).trim() : (it.variant ? String(it.variant).trim() : null);
+
+    const unitPrice = prod.price + extraPrice;
+    const itemTotal = unitPrice * qty;
+
+    let displayName = prod.name;
+    if (variant) {
+      displayName += ` (${variant})`;
+    }
+    if (spicyLevel) {
+      displayName += ` (Level ${spicyLevel}${extraPrice > 0 ? ` +Rp ${extraPrice.toLocaleString('id-ID')}` : ''})`;
+    }
+    const itemNote = String(it.note || it.notes || it.spicyNote || it.variantNote || '').trim();
+    if (itemNote) {
+      displayName += ` [${itemNote}]`;
+    }
+
     cleanedItems.push({
       productId: prod.id,
-      productName: prod.name,
+      productName: displayName,
       productEmoji: prod.emoji || '🛍️',
       qty,
-      price: prod.price,
+      price: unitPrice,
+      basePrice: prod.price,
+      variant: variant || null,
+      spicyLevel,
+      extraPrice,
+      spicyNote: it.spicyNote ? String(it.spicyNote).trim() : '',
+      note: itemNote || null,
       modal: prod.modal || Math.round(prod.price * 0.6),
       total: itemTotal,
     });
@@ -192,7 +241,8 @@ app.post('/api/public/orders', async (req, res) => {
     channel: 'web',
     customerName: cleanName,
     customerPhone: cleanPhone,
-    deliveryMethod: cleanMethod,
+    deliveryMethod: cleanTableNo ? `${cleanMethod} (${cleanTableNo})` : cleanMethod,
+    tableNo: cleanTableNo || null,
     address: cleanAddress,
     paymentMethod: cleanPayment,
     method: cleanPayment,
@@ -276,6 +326,8 @@ app.post('/api/public/orders', async (req, res) => {
       items: order.items.map((it) => ({
         productName: it.productName,
         productEmoji: it.productEmoji,
+        variant: it.variant || null,
+        note: it.note || null,
         qty: it.qty,
         price: it.price,
         total: it.total,
@@ -309,6 +361,8 @@ app.get('/api/public/orders/:id', async (req, res) => {
       items: (o.items || []).map((it) => ({
         productName: it.productName,
         productEmoji: it.productEmoji,
+        variant: it.variant || null,
+        note: it.note || null,
         qty: it.qty,
         price: it.price,
         total: it.total,
@@ -664,7 +718,7 @@ app.get('/api/orders/:id', async (req, res) => {
 app.post('/api/orders', requireAuth, async (req, res) => {
   await Promise.all([db.syncSettings(), db.syncCollection('products')]);
   const d = db.getDB();
-  const { items, discount, method, paid, kasir } = req.body || {};
+  const { items, discount, method, paid, kasir, deliveryMethod, diningType, tableNo } = req.body || {};
   if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Pesanan kosong.' });
   const METHODS = ['Tunai', 'QRIS', 'Transfer'];
   if (!METHODS.includes(method)) return res.status(400).json({ error: 'Metode pembayaran tidak valid.' });
@@ -676,8 +730,54 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     if (!prod) return res.status(400).json({ error: 'Produk tidak ditemukan.' });
     const qty = Math.max(1, parseInt(it.qty, 10) || 1);
     if (prod.stock < qty) return res.status(400).json({ error: 'Stok ' + prod.name + ' tidak cukup (' + prod.stock + ').' });
-    cleaned.push({ productId: prod.id, productName: prod.name, productEmoji: prod.emoji, qty, price: prod.price, modal: prod.modal, total: prod.price * qty });
-    subtotal += prod.price * qty;
+
+    // Handle spicy level & extra cost (Khusus Enoci Pedec, Chikiwings, Bacic)
+    const isSpicy = prod.hasSpicyLevel || (db.isSpicyProduct && db.isSpicyProduct(prod));
+    let spicyLevel = null;
+    let extraPrice = 0;
+    if (isSpicy && it.spicyLevel != null) {
+      spicyLevel = parseInt(it.spicyLevel, 10);
+      if (!isNaN(spicyLevel) && spicyLevel >= 1) {
+        if (spicyLevel > 5) {
+          extraPrice = (spicyLevel - 5) * 2000;
+        }
+      } else {
+        spicyLevel = null;
+      }
+    }
+
+    const isVariantItem = prod.hasVariants || (db.isPizzaProduct && db.isPizzaProduct(prod)) || (db.isBurgerProduct && db.isBurgerProduct(prod)) || (db.isMartabakProduct && db.isMartabakProduct(prod)) || (db.isRotiBakarProduct && db.isRotiBakarProduct(prod)) || (db.isVariantProduct && db.isVariantProduct(prod));
+    const variant = (isVariantItem && it.variant) ? String(it.variant).trim() : (it.variant ? String(it.variant).trim() : null);
+
+    const unitPrice = (it.price && it.price > prod.price) ? it.price : (prod.price + extraPrice);
+    const itemTotal = unitPrice * qty;
+    const itemNote = String(it.note || it.notes || it.spicyNote || it.variantNote || '').trim();
+    let displayName = it.productName;
+    if (!displayName) {
+      displayName = prod.name;
+      if (variant) displayName += ` (${variant})`;
+      if (spicyLevel) displayName += ` (Level ${spicyLevel}${extraPrice > 0 ? ` +Rp ${extraPrice.toLocaleString('id-ID')}` : ''})`;
+      if (itemNote) displayName += ` [${itemNote}]`;
+    } else if (itemNote && !displayName.includes(itemNote)) {
+      displayName += ` [${itemNote}]`;
+    }
+
+    cleaned.push({
+      productId: prod.id,
+      productName: displayName,
+      productEmoji: prod.emoji,
+      qty,
+      price: unitPrice,
+      basePrice: prod.price,
+      variant: variant || null,
+      spicyLevel,
+      extraPrice,
+      spicyNote: it.spicyNote ? String(it.spicyNote).trim() : '',
+      note: itemNote || null,
+      modal: prod.modal,
+      total: itemTotal
+    });
+    subtotal += itemTotal;
   }
 
   const discountVal = Math.max(0, parseInt(discount, 10) || 0);
@@ -699,6 +799,8 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     paid: totalPaid,
     change,
     method,
+    deliveryMethod: deliveryMethod || diningType || 'Makan di Tempat',
+    tableNo: tableNo || null,
     status: 'Lunas',
     kasir: kasir || req.user.name || 'Kasir',
     createdAt: db.now(),

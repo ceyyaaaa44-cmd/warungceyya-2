@@ -542,14 +542,73 @@ function nextInvoiceNo() {
   return 'INV' + pad(s.invoiceSeq, 4);
 }
 
+const PIZZA_VARIANTS = ['Margherita', 'Pepperoni', 'Veggie', 'Seafood', 'Truffle'];
+const BURGER_VARIANTS = ['Doubble Cheese Burger', 'Beef Burger', 'Veggie Burger', 'Smacker Burger', 'Chicken Burger'];
+const MARTABAK_VARIANTS = ['Kacang', 'Coklat', 'Keju', 'Selai', 'Ketan'];
+const ROTI_BAKAR_VARIANTS = ['Coklat', 'Keju', 'Selai'];
+
+function isSpicyProduct(p) {
+  if (!p) return false;
+  if (p.hasSpicyLevel === true) return true;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+}
+
+function isPizzaProduct(p) {
+  if (!p) return false;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('pyezza');
+}
+
+function isBurgerProduct(p) {
+  if (!p) return false;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('bulgel');
+}
+
+function isMartabakProduct(p) {
+  if (!p) return false;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('maytabac');
+}
+
+function isRotiBakarProduct(p) {
+  if (!p) return false;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('nti bakay') || name.includes('roti bakar');
+}
+
+function getProductVariants(p) {
+  if (!p) return null;
+  if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) return p.variants;
+  if (isPizzaProduct(p)) return PIZZA_VARIANTS;
+  if (isBurgerProduct(p)) return BURGER_VARIANTS;
+  if (isMartabakProduct(p)) return MARTABAK_VARIANTS;
+  if (isRotiBakarProduct(p)) return ROTI_BAKAR_VARIANTS;
+  return null;
+}
+
+function isVariantProduct(p) {
+  if (!p) return false;
+  if (p.hasVariants === true) return true;
+  return isPizzaProduct(p) || isBurgerProduct(p) || isMartabakProduct(p) || isRotiBakarProduct(p);
+}
+
 function publicProduct(p) {
   const cat = cache.categories.find((c) => c.id === p.categoryId);
+  const spicy = isSpicyProduct(p);
+  const isVar = isVariantProduct(p);
+  const prodVariants = getProductVariants(p);
   return {
     id: p.id, name: p.name, emoji: p.emoji || '🛍️', image: p.image || '',
     categoryId: p.categoryId, category: cat ? cat.name : 'Lainnya',
     categoryIcon: cat ? cat.icon : '🧰', categoryColor: cat ? cat.color : '#64748b',
     price: p.price, modal: p.modal || 0, stock: p.stock, unit: p.unit || 'Pcs',
     barcode: p.barcode || '', status: p.status || 'aktif', sold: 0,
+    hasSpicyLevel: spicy,
+    spicyConfig: spicy ? (p.spicyConfig || { minLevel: 1, maxDefaultLevel: 5, extraLevelPrice: 2000 }) : null,
+    hasVariants: isVar,
+    variants: isVar ? prodVariants : null,
     createdAt: p.createdAt, updatedAt: p.updatedAt,
   };
 }
@@ -593,6 +652,9 @@ function ensureReviews() {
 
 function customerProduct(p) {
   const cat = cache.categories.find((c) => c.id === p.categoryId);
+  const spicy = isSpicyProduct(p);
+  const isVar = isVariantProduct(p);
+  const prodVariants = getProductVariants(p);
   return {
     id: p.id,
     name: p.name,
@@ -606,13 +668,17 @@ function customerProduct(p) {
     stock: p.stock,
     inStock: p.stock > 0,
     unit: p.unit || 'Pcs',
+    hasSpicyLevel: spicy,
+    spicyConfig: spicy ? (p.spicyConfig || { minLevel: 1, maxDefaultLevel: 5, extraLevelPrice: 2000 }) : null,
+    hasVariants: isVar,
+    variants: isVar ? prodVariants : null,
   };
 }
 
 module.exports = {
   getDB, load, save, saveSettings, addDoc, updateDoc, deleteDoc,
   syncCollection, syncSettings,
-  uid, now, todayKey, dayKeyOf, nextInvoiceNo, publicProduct, customerProduct,
+  uid, now, todayKey, dayKeyOf, nextInvoiceNo, publicProduct, customerProduct, isSpicyProduct, isPizzaProduct, PIZZA_VARIANTS, isBurgerProduct, BURGER_VARIANTS, isMartabakProduct, MARTABAK_VARIANTS, isRotiBakarProduct, ROTI_BAKAR_VARIANTS, isVariantProduct, getProductVariants,
   ensureReviews,
   get useFirestore() { return useFirestore; },
   getInitStatus: () => initStatus,

@@ -189,6 +189,284 @@
 
   /* ------------------------------ keranjang ------------------------------ */
 
+  let currentNoteCartKey = null;
+
+  function openPosNoteModal(key) {
+    currentNoteCartKey = key;
+    const item = cart.get(key);
+    if (!item) return;
+
+    const modal = document.getElementById('pos-note-modal');
+    const nameEl = document.getElementById('pos-note-product-name');
+    const inputEl = document.getElementById('pos-note-input');
+
+    if (nameEl) nameEl.textContent = `Catatan: ${item.p.name}`;
+    if (inputEl) inputEl.value = item.note || '';
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  function closePosNoteModal() {
+    const modal = document.getElementById('pos-note-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    currentNoteCartKey = null;
+  }
+
+
+  
+  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic)
+  function isSpicyProduct(p) {
+    if (!p) return false;
+    if (p.hasSpicyLevel === true) return true;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+  }
+
+  let currentPosSpicyProduct = null;
+  let posSpicyLevel = 1;
+  let posIsExtraSpicy = false;
+  let posExtraSpicyLevel = 6;
+  let posSpicyNote = '';
+
+  function openPosSpicyModal(p) {
+    currentPosSpicyProduct = p;
+    posSpicyLevel = 1;
+    posIsExtraSpicy = false;
+    posExtraSpicyLevel = 6;
+    posSpicyNote = '';
+
+    const modal = document.getElementById('pos-spicy-modal');
+    const nameEl = document.getElementById('pos-spicy-product-name');
+    const priceEl = document.getElementById('pos-spicy-product-price');
+    const extraToggle = document.getElementById('pos-spicy-extra-toggle');
+    const extraWrap = document.getElementById('pos-spicy-extra-wrap');
+    const noteInput = document.getElementById('pos-spicy-note');
+    const lvlDisp = document.getElementById('pos-spicy-level-display');
+    const costText = document.getElementById('pos-spicy-extra-cost-text');
+
+    if (nameEl) nameEl.textContent = p.name;
+    if (priceEl) priceEl.textContent = app.formatT(p.price) + ' / ' + (p.unit || 'Porsi');
+    if (extraToggle) extraToggle.checked = false;
+    if (extraWrap) extraWrap.classList.add('hidden');
+    if (noteInput) noteInput.value = '';
+    if (lvlDisp) lvlDisp.textContent = 'Level 6';
+    if (costText) costText.textContent = `+${app.formatT(2000)} / porsi`;
+
+    renderPosSpicyPillStates();
+    updatePosSpicySubtotal();
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  function closePosSpicyModal() {
+    const modal = document.getElementById('pos-spicy-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    currentPosSpicyProduct = null;
+  }
+
+  function renderPosSpicyPillStates() {
+    const pills = document.querySelectorAll('#pos-spicy-preset-group .btn-pos-spicy-lvl');
+    pills.forEach((btn) => {
+      const lvl = parseInt(btn.dataset.lvl, 10);
+      if (!posIsExtraSpicy && lvl === posSpicyLevel) {
+        btn.className = 'btn-pos-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-orange-500 bg-orange-500 text-white shadow-xs';
+      } else {
+        btn.className = 'btn-pos-spicy-lvl py-2 px-1 rounded-xl text-xs font-black border transition flex flex-col items-center justify-center gap-0.5 border-gray-200 bg-white text-gray-700 hover:border-orange-300';
+      }
+    });
+  }
+
+  function updatePosSpicySubtotal() {
+    const unitTotalEl = document.getElementById('pos-spicy-unit-total');
+    if (currentPosSpicyProduct && unitTotalEl) {
+      const extra = posIsExtraSpicy ? Math.max(1, posExtraSpicyLevel - 5) * 2000 : 0;
+      unitTotalEl.textContent = app.formatT(currentPosSpicyProduct.price + extra);
+    }
+  }
+
+  function addSpicyToCart(p, level, extraPrice, note) {
+    if (!p) return;
+    const key = p.id + '_lvl' + level + (note ? '_' + note.replace(/[^a-zA-Z0-9]/g, '') : '');
+    const unitPrice = p.price + extraPrice;
+    if (cart.has(key)) {
+      if (cart.get(key).qty + 1 > p.stock) { app.toast('Stok ' + p.name + ' tidak cukup.', 'error'); return; }
+      cart.get(key).qty++;
+    } else {
+      if (p.stock < 1) { app.toast('Stok ' + p.name + ' habis.', 'error'); return; }
+      cart.set(key, { p, key, qty: 1, level, extraPrice, note, unitPrice, ts: Date.now() });
+    }
+    renderCart();
+    app.toast(`Produk ditambahkan: ${p.name} (Level ${level})`);
+  }
+
+  const PIZZA_VARIANTS = ['Margherita', 'Pepperoni', 'Veggie', 'Seafood', 'Truffle'];
+  const BURGER_VARIANTS = ['Doubble Cheese Burger', 'Beef Burger', 'Veggie Burger', 'Smacker Burger', 'Chicken Burger'];
+  const MARTABAK_VARIANTS = ['Kacang', 'Coklat', 'Keju', 'Selai', 'Ketan'];
+  const ROTI_BAKAR_VARIANTS = ['Coklat', 'Keju', 'Selai'];
+
+  function isPizzaProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('pyezza');
+  }
+
+  function isBurgerProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('bulgel');
+  }
+
+  function isMartabakProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('maytabac');
+  }
+
+  function isRotiBakarProduct(p) {
+    if (!p) return false;
+    const name = String(p.name || '').toLowerCase();
+    return name.includes('nti bakay') || name.includes('roti bakar');
+  }
+
+  function isVariantProduct(p) {
+    if (!p) return false;
+    if (p.hasVariants === true) return true;
+    return isPizzaProduct(p) || isBurgerProduct(p) || isMartabakProduct(p) || isRotiBakarProduct(p);
+  }
+
+  function getProductVariants(p) {
+    if (!p) return [];
+    if (p.variants && Array.isArray(p.variants) && p.variants.length > 0) return p.variants;
+    if (isPizzaProduct(p)) return PIZZA_VARIANTS;
+    if (isBurgerProduct(p)) return BURGER_VARIANTS;
+    if (isMartabakProduct(p)) return MARTABAK_VARIANTS;
+    if (isRotiBakarProduct(p)) return ROTI_BAKAR_VARIANTS;
+    return [];
+  }
+
+  const POS_VARIANT_INFO = {
+    'Margherita': { icon: '🧀', sub: 'Klasik Tomat & Basil' },
+    'Pepperoni': { icon: '🥩', sub: 'Daging Sapi & Keju Leleh' },
+    'Veggie': { icon: '🥦', sub: 'Jamur, Paprika & Sayur' },
+    'Seafood': { icon: '🦐', sub: 'Udang, Cumi & Saus' },
+    'Truffle': { icon: '🍄', sub: 'Jamur Spesial & Truffle' },
+    'Doubble Cheese Burger': { icon: '🧀', sub: 'Double Beef & Keju Leleh' },
+    'Beef Burger': { icon: '🥩', sub: 'Daging Panggang & Sayur' },
+    'Veggie Burger': { icon: '🥦', sub: 'Patty Nabati & Selada' },
+    'Smacker Burger': { icon: '🥓', sub: 'Saus Smacker Gurih' },
+    'Chicken Burger': { icon: '🍗', sub: 'Patty Ayam Krispi & Mayo' },
+    'Kacang': { icon: '🥜', sub: 'Kacang Gurih Renyah' },
+    'Coklat': { icon: '🍫', sub: 'Coklat Manis Lumer' },
+    'Keju': { icon: '🧀', sub: 'Keju Cheddar Parut' },
+    'Selai': { icon: '🍓', sub: 'Selai Buah Manis Segar' },
+    'Ketan': { icon: '🍚', sub: 'Ketan Hitam Legit' },
+  };
+
+  let currentPosPizzaProduct = null;
+  let posPizzaVariant = '';
+  let posPizzaNote = '';
+
+  function openPosPizzaModal(p) {
+    currentPosPizzaProduct = p;
+    const variants = getProductVariants(p);
+    posPizzaVariant = variants[0] || '';
+    posPizzaNote = '';
+
+    const modal = document.getElementById('pos-pizza-modal');
+    const iconEl = document.getElementById('pos-pizza-icon');
+    const labelEl = document.getElementById('pos-pizza-modal-label');
+    const nameEl = document.getElementById('pos-pizza-product-name');
+    const priceEl = document.getElementById('pos-pizza-product-price');
+    const unitTotalEl = document.getElementById('pos-pizza-unit-total');
+    const noteInput = document.getElementById('pos-pizza-note');
+
+    const isBurger = isBurgerProduct(p);
+    const isMartabak = isMartabakProduct(p);
+    const isRotiBakar = isRotiBakarProduct(p);
+    if (iconEl) iconEl.textContent = isBurger ? '🍔' : isMartabak ? '🥞' : isRotiBakar ? '🍞' : '🍕';
+    if (labelEl) labelEl.textContent = isBurger ? 'Pilih Varian Burger:' : isMartabak ? 'Pilih Varian Maytabac:' : isRotiBakar ? 'Pilih Varian Nti Bakay:' : 'Pilih Varian Pizza:';
+    if (nameEl) nameEl.textContent = p.name;
+    if (priceEl) priceEl.textContent = app.formatT(p.price) + ' / ' + (p.unit || 'Porsi');
+    if (unitTotalEl) unitTotalEl.textContent = app.formatT(p.price);
+    if (noteInput) {
+      noteInput.placeholder = isBurger 
+        ? 'Catatan burger (opsional, misal: tanpa bawang)' 
+        : isMartabak 
+          ? 'Catatan maytabac (opsional, misal: susu dipisah)'
+          : isRotiBakar
+            ? 'Catatan nti bakay (opsional, misal: bakar agak garing)'
+            : 'Catatan pizza (opsional, misal: potong 8)';
+      noteInput.value = '';
+    }
+
+    renderPosPizzaVariantStates();
+
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+
+  function closePosPizzaModal() {
+    const modal = document.getElementById('pos-pizza-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+    currentPosPizzaProduct = null;
+  }
+
+  function renderPosPizzaVariantStates() {
+    const group = document.getElementById('pos-pizza-variants-group');
+    if (!group || !currentPosPizzaProduct) return;
+    const variants = getProductVariants(currentPosPizzaProduct);
+
+    group.innerHTML = variants.map((v) => {
+      const isSel = v === posPizzaVariant;
+      const info = POS_VARIANT_INFO[v] || { icon: isBurgerProduct(currentPosPizzaProduct) ? '🍔' : '🍕', sub: 'Varian Menu' };
+      return `
+        <button type="button" class="btn-pos-pizza-var w-full p-2.5 rounded-xl text-left border transition flex items-center justify-between ${isSel ? 'border-orange-500 bg-orange-500 text-white shadow-xs font-bold text-xs' : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300 font-bold text-xs'}" data-variant="${v}">
+          <span class="flex items-center gap-2"><span>${info.icon}</span><span>${v}</span></span>
+          <span class="text-[10px] ${isSel ? 'opacity-90 text-white' : 'text-gray-400'}">${info.sub}</span>
+        </button>
+      `;
+    }).join('');
+
+    group.querySelectorAll('.btn-pos-pizza-var').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        posPizzaVariant = btn.dataset.variant;
+        renderPosPizzaVariantStates();
+      });
+    });
+  }
+
+  function addPizzaToCart(p, variant, note) {
+    if (!p) return;
+    const key = p.id + '_var_' + variant.toLowerCase() + (note ? '_' + note.replace(/[^a-zA-Z0-9]/g, '') : '');
+    const unitPrice = p.price;
+    if (cart.has(key)) {
+      if (cart.get(key).qty + 1 > p.stock) { app.toast('Stok ' + p.name + ' tidak cukup.', 'error'); return; }
+      cart.get(key).qty++;
+    } else {
+      if (p.stock < 1) { app.toast('Stok ' + p.name + ' habis.', 'error'); return; }
+      cart.set(key, { p, key, qty: 1, variant, note, unitPrice, ts: Date.now() });
+    }
+    renderCart();
+    app.toast(`Produk ditambahkan: ${p.name} (${variant})`);
+  }
+
   function cartEntries() { return [...cart.values()].sort((a, b) => a.ts - b.ts); }
 
   function addToCart(id) {
@@ -242,6 +520,7 @@
     }
     lucide.createIcons();
 
+    list.querySelectorAll('[data-note-btn]').forEach((b) => b.addEventListener('click', () => openPosNoteModal(b.dataset.noteBtn)));
     list.querySelectorAll('[data-dec]').forEach((b) => b.addEventListener('click', () => changeQty(b.dataset.dec, -1)));
     list.querySelectorAll('[data-id]').forEach((b) => b.addEventListener('click', () => changeQty(b.dataset.id, 1)));
 
@@ -253,7 +532,7 @@
   }
 
   function updateTotals() {
-    const subtotal = cartEntries().reduce((a, it) => a + it.p.price * it.qty, 0);
+    const subtotal = cartEntries().reduce((a, it) => a + (it.unitPrice || it.p.price) * it.qty, 0);
     const discount = num(document.getElementById('c-discount').value || settings.discountDefault);
     document.getElementById('c-subtotal').textContent = app.formatT(subtotal);
     document.getElementById('c-taxrate').textContent = '(' + (settings.taxRate || 0) + '%)';
@@ -266,6 +545,20 @@
   }
 
   /* ------------------------------ pembayaran ------------------------------ */
+
+  let posDiningType = 'Makan di Tempat'; // 'Makan di Tempat' | 'Take Away'
+
+  function setPosDiningType(type) {
+    posDiningType = type;
+    document.querySelectorAll('#pos-dining-type-group .pos-dining-btn').forEach((btn) => {
+      if (btn.dataset.dining === type) {
+        btn.className = 'pos-dining-btn border-2 border-blue-500 text-blue-600 bg-blue-50 rounded-xl py-2 px-3 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-98';
+      } else {
+        btn.className = 'pos-dining-btn border-2 border-gray-200 text-gray-600 hover:border-blue-300 rounded-xl py-2 px-3 text-xs font-bold flex items-center justify-center gap-2 transition active:scale-98';
+      }
+    });
+  }
+
 
   function openPay() {
     if (!cart.size) { app.toast('Keranjang masih kosong.', 'error'); return; }
@@ -373,7 +666,24 @@ let currentKasir = 'Kasir';
       method: payMethod,
       discount: num(document.getElementById('c-discount').value),
       paid: payMethod === 'Tunai' ? paid : total,
-      items: cartEntries().map((e) => ({ productId: e.p.id, qty: e.qty })),
+      items: cartEntries().map((e) => {
+        const itemPrice = e.unitPrice || e.p.price;
+        let displayName = e.p.name;
+        if (e.variant) displayName += ` (${e.variant})`;
+        if (e.level) displayName += ` (Level ${e.level}${e.extraPrice > 0 ? ' +Rp ' + e.extraPrice.toLocaleString('id-ID') : ''})`;
+        if (e.note) displayName += ` [${e.note}]`;
+
+        return {
+          productId: e.p.id,
+          qty: e.qty,
+          price: itemPrice,
+          variant: e.variant || null,
+          spicyLevel: e.level || null,
+          extraPrice: e.extraPrice || 0,
+          spicyNote: e.note || '',
+          productName: displayName
+        };
+      }),
       kasir: currentKasir,
     };
     const btn = document.getElementById('btn-confirm-pay');
@@ -381,7 +691,7 @@ let currentKasir = 'Kasir';
     btn.textContent = 'Memproses...';
     app.post('api/orders', payload)
       .then((res) => {
-        app.toast('Pembayaran berhasil! ' + res.order.id);
+        app.toast(`Pembayaran berhasil (${posDiningType})! ${res.order.id}`);
         cart.clear();
         renderCart();
         closePay();
@@ -411,6 +721,7 @@ let currentKasir = 'Kasir';
       updateChange();
     });
     document.querySelectorAll('#pay-modal [data-method]').forEach((b) => b.addEventListener('click', () => setMethod(b.dataset.method)));
+    document.querySelectorAll('#pos-dining-type-group [data-dining]').forEach((b) => b.addEventListener('click', () => setPosDiningType(b.dataset.dining)));
     document.querySelectorAll('#pay-modal [data-close]').forEach((el) => el.addEventListener('click', closePay));
     document.getElementById('btn-pay').addEventListener('click', openPay);
     document.getElementById('btn-save-pos').addEventListener('click', () => app.toast('Gunakan tombol Bayar untuk menyimpan transaksi.', 'info'));

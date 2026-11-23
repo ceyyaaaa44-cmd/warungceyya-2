@@ -93,7 +93,13 @@
       "sold": 4,
       "createdAt": "2026-10-09T02:02:52.385Z",
       "updatedAt": "2026-11-09T06:47:15.589Z",
-      "stockValue": 12425000
+      "stockValue": 12425000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_18ad79862eb3",
@@ -193,7 +199,13 @@
       "sold": 82,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-09T01:13:58.077Z",
-      "stockValue": 15000000
+      "stockValue": 15000000,
+      "hasVariants": true,
+      "variants": [
+        "Coklat",
+        "Keju",
+        "Selai"
+      ]
     },
     {
       "id": "prd_4eabdf1cccbf",
@@ -273,7 +285,15 @@
       "sold": 67,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-23T01:35:07.703Z",
-      "stockValue": 19240000
+      "stockValue": 19240000,
+      "hasVariants": true,
+      "variants": [
+        "Margherita",
+        "Pepperoni",
+        "Veggie",
+        "Seafood",
+        "Truffle"
+      ]
     },
     {
       "id": "prd_5d803241b640",
@@ -293,7 +313,13 @@
       "sold": 85,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-23T01:36:43.554Z",
-      "stockValue": 12475000
+      "stockValue": 12475000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_71fb27ca70c1",
@@ -353,7 +379,15 @@
       "sold": 81,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-11-09T06:42:06.769Z",
-      "stockValue": 5850000
+      "stockValue": 5850000,
+      "hasVariants": true,
+      "variants": [
+        "Kacang",
+        "Coklat",
+        "Keju",
+        "Selai",
+        "Ketan"
+      ]
     },
     {
       "id": "prd_9f5a7a2ed2f4",
@@ -373,7 +407,15 @@
       "sold": 65,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-23T01:35:07.703Z",
-      "stockValue": 10465000
+      "stockValue": 10465000,
+      "hasVariants": true,
+      "variants": [
+        "Doubble Cheese Burger",
+        "Beef Burger",
+        "Veggie Burger",
+        "Smacker Burger",
+        "Chicken Burger"
+      ]
     },
     {
       "id": "prd_a42a5f13b581",
@@ -413,7 +455,13 @@
       "sold": 74,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-23T01:35:45.135Z",
-      "stockValue": 12450000
+      "stockValue": 12450000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_cfced1f422fa",
@@ -433,7 +481,13 @@
       "sold": 61,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-11-09T04:29:35.025Z",
-      "stockValue": 10374000
+      "stockValue": 10374000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_da199a7323fc",
@@ -453,7 +507,13 @@
       "sold": 3,
       "createdAt": "2026-10-09T02:09:44.777Z",
       "updatedAt": "2026-11-09T06:42:06.769Z",
-      "stockValue": 6705000
+      "stockValue": 6705000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_db9649ac2391",
@@ -493,7 +553,13 @@
       "sold": 64,
       "createdAt": "2026-09-09T04:42:34.437Z",
       "updatedAt": "2026-10-23T01:36:43.555Z",
-      "stockValue": 10485000
+      "stockValue": 10485000,
+      "hasSpicyLevel": true,
+      "spicyConfig": {
+        "minLevel": 1,
+        "maxDefaultLevel": 5,
+        "extraLevelPrice": 2000
+      }
     },
     {
       "id": "prd_fa617a66dba3",
