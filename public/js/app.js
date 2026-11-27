@@ -104,7 +104,7 @@
     el.innerHTML = `
       <div class="flex items-center gap-3 bg-white border rounded-xl pl-3 pr-4 py-3 shadow-xl shadow-black/5 border-gray-100 modal-card">
         <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg" style="color:#fff;background:${color}">
-          <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${icon}"/></svg>
+          <svg style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>
         </span>
         <span class="text-sm font-medium text-gray-800">${msg}</span>
       </div>`;

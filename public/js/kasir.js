@@ -10,6 +10,17 @@
   let currentSearch = '';
   const cart = new Map(); // productId -> { p, qty }
   let payMethod = 'Tunai';
+  let currentKasir = 'Kasir';
+
+  function updateCurrentKasir() {
+    try {
+      const u = JSON.parse(localStorage.getItem('warung_user') || '{}');
+      if (u && u.name) currentKasir = u.name;
+    } catch (e) {
+      currentKasir = 'Kasir';
+    }
+    return currentKasir;
+  }
 
   function num(v) { return parseInt(String(v).replace(/[^\d]/g, ''), 10) || 0; }
 
@@ -470,6 +481,7 @@
   /* ---------------------- Tambah Produk oleh Kasir ---------------------- */
 
   function openKasirProductModal() {
+    updateCurrentKasir();
     const modal = document.getElementById('kasir-product-modal');
     if (!modal) return;
 
@@ -483,7 +495,11 @@
     // Populate categories
     const catSel = document.getElementById('kp-category');
     if (catSel) {
-      catSel.innerHTML = categories.map((c) => `<option value="${c.id}">${c.icon || '📦'} ${c.name}</option>`).join('');
+      if (categories && categories.length > 0) {
+        catSel.innerHTML = categories.map((c) => `<option value="${c.id}">${c.icon || '📦'} ${c.name}</option>`).join('');
+      } else {
+        catSel.innerHTML = '<option value="">Umum</option>';
+      }
     }
 
     // Reset Image & Emoji
@@ -504,6 +520,12 @@
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    modal.style.display = 'flex';
+
+    if (window.lucide && window.lucide.createIcons) {
+      lucide.createIcons();
+    }
+
     setTimeout(() => {
       const nameInput = document.getElementById('kp-name');
       if (nameInput) nameInput.focus();
@@ -515,11 +537,13 @@
     if (modal) {
       modal.classList.add('hidden');
       modal.classList.remove('flex');
+      modal.style.display = 'none';
     }
   }
 
   function saveKasirProduct(e) {
     if (e && e.preventDefault) e.preventDefault();
+    updateCurrentKasir();
 
     const name = (document.getElementById('kp-name')?.value || '').trim();
     const categoryId = document.getElementById('kp-category')?.value || (categories[0] ? categories[0].id : '');
@@ -802,11 +826,7 @@
       app.toast('Uang kurang Rp ' + short.toLocaleString('id-ID'), 'error');
       return;
     }
-let currentKasir = 'Kasir';
-    try {
-      const u = JSON.parse(localStorage.getItem('warung_user') || '{}');
-      if (u.name) currentKasir = u.name;
-    } catch(e) {}
+    updateCurrentKasir();
 
     const payload = {
       method: payMethod,
@@ -1080,6 +1100,9 @@ let currentKasir = 'Kasir';
     document.getElementById('btn-scan-barcode').addEventListener('click', openScanner);
     document.getElementById('btn-close-scanner').addEventListener('click', closeScanner);
     document.getElementById('close-scanner').addEventListener('click', closeScanner);
+
+    window.openKasirProductModal = openKasirProductModal;
+    window.closeKasirProductModal = closeKasirProductModal;
 
     Promise.all([app.get('api/products-full'), app.get('api/categories'), app.get('api/settings')])
       .then(([pd, cd, st]) => {
