@@ -551,7 +551,7 @@ function isSpicyProduct(p) {
   if (!p) return false;
   if (p.hasSpicyLevel === true) return true;
   const name = String(p.name || '').toLowerCase();
-  return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+  return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng') || name.includes('topocci') || name.includes('topokki') || name.includes('topoki');
 }
 
 function isPizzaProduct(p) {
@@ -609,6 +609,7 @@ function publicProduct(p) {
     spicyConfig: spicy ? (p.spicyConfig || { minLevel: 1, maxDefaultLevel: 5, extraLevelPrice: 2000 }) : null,
     hasVariants: isVar,
     variants: isVar ? prodVariants : null,
+    createdBy: p.createdBy || null,
     createdAt: p.createdAt, updatedAt: p.updatedAt,
   };
 }
@@ -672,6 +673,7 @@ function customerProduct(p) {
     spicyConfig: spicy ? (p.spicyConfig || { minLevel: 1, maxDefaultLevel: 5, extraLevelPrice: 2000 }) : null,
     hasVariants: isVar,
     variants: isVar ? prodVariants : null,
+    createdBy: p.createdBy || null,
   };
 }
 

@@ -368,9 +368,17 @@ function publicProduct(p) {
     barcode: p.barcode || '',
     status: p.status || 'aktif',
     sold: 0,
+    createdBy: p.createdBy || null,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
   };
+}
+
+function isSpicyProduct(p) {
+  if (!p) return false;
+  if (p.hasSpicyLevel === true) return true;
+  const name = String(p.name || '').toLowerCase();
+  return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng') || name.includes('topocci') || name.includes('topokki') || name.includes('topoki');
 }
 
 module.exports = {
@@ -383,5 +391,6 @@ module.exports = {
   dayKeyOf,
   nextInvoiceNo,
   publicProduct,
+  isSpicyProduct,
   DB_FILE,
 };

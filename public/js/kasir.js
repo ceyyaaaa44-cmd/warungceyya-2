@@ -220,12 +220,12 @@
 
 
   
-  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic)
+  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic, Topoccii, dll)
   function isSpicyProduct(p) {
     if (!p) return false;
     if (p.hasSpicyLevel === true) return true;
     const name = String(p.name || '').toLowerCase();
-    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng') || name.includes('topocci') || name.includes('topokki') || name.includes('topoki');
   }
 
   let currentPosSpicyProduct = null;
@@ -467,17 +467,151 @@
     app.toast(`Produk ditambahkan: ${p.name} (${variant})`);
   }
 
+  /* ---------------------- Tambah Produk oleh Kasir ---------------------- */
+
+  function openKasirProductModal() {
+    const modal = document.getElementById('kasir-product-modal');
+    if (!modal) return;
+
+    // Reset Form
+    const form = document.getElementById('kasir-product-form');
+    if (form) form.reset();
+
+    const authorEl = document.getElementById('kasir-product-author');
+    if (authorEl) authorEl.textContent = currentKasir || 'Kasir';
+
+    // Populate categories
+    const catSel = document.getElementById('kp-category');
+    if (catSel) {
+      catSel.innerHTML = categories.map((c) => `<option value="${c.id}">${c.icon || '📦'} ${c.name}</option>`).join('');
+    }
+
+    // Reset Image & Emoji
+    const previewImg = document.getElementById('kp-image-preview');
+    const previewEmoji = document.getElementById('kp-emoji-display');
+    const imgData = document.getElementById('kp-image-data');
+    const emojiVal = document.getElementById('kp-emoji-val');
+    const btnClearImg = document.getElementById('btn-kp-clear-img');
+
+    if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+    if (previewEmoji) { previewEmoji.textContent = '🛍️'; previewEmoji.classList.remove('hidden'); }
+    if (imgData) imgData.value = '';
+    if (emojiVal) emojiVal.value = '🛍️';
+    if (btnClearImg) btnClearImg.classList.add('hidden');
+
+    const stockInput = document.getElementById('kp-stock');
+    if (stockInput) stockInput.value = '50';
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+      const nameInput = document.getElementById('kp-name');
+      if (nameInput) nameInput.focus();
+    }, 60);
+  }
+
+  function closeKasirProductModal() {
+    const modal = document.getElementById('kasir-product-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  function saveKasirProduct(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const name = (document.getElementById('kp-name')?.value || '').trim();
+    const categoryId = document.getElementById('kp-category')?.value || (categories[0] ? categories[0].id : '');
+    const price = app.escapeInput.toNumber(document.getElementById('kp-price')?.value || '0');
+    const modal = app.escapeInput.toNumber(document.getElementById('kp-modal')?.value || '0');
+    const stock = parseInt(document.getElementById('kp-stock')?.value || '0', 10);
+    const unit = document.getElementById('kp-unit')?.value || 'Porsi';
+    const barcode = (document.getElementById('kp-barcode')?.value || '').trim();
+    const emoji = document.getElementById('kp-emoji-val')?.value || '🛍️';
+    const image = document.getElementById('kp-image-data')?.value || '';
+    const hasSpicy = document.getElementById('kp-has-spicy')?.checked === true;
+
+    if (!name) {
+      app.toast('Nama produk wajib diisi.', 'error');
+      return;
+    }
+    if (isNaN(price) || price < 0) {
+      app.toast('Harga jual tidak valid.', 'error');
+      return;
+    }
+
+    const payload = {
+      name,
+      categoryId,
+      price,
+      modal: isNaN(modal) ? 0 : modal,
+      stock: isNaN(stock) ? 0 : stock,
+      unit,
+      barcode,
+      emoji,
+      image,
+      hasSpicyLevel: hasSpicy,
+      status: 'aktif',
+      createdBy: {
+        name: currentKasir || 'Kasir',
+        role: 'kasir',
+        at: new Date().toISOString()
+      }
+    };
+
+    const submitBtn = document.getElementById('btn-submit-kasir-product');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Menyimpan...';
+      if (window.lucide && window.lucide.createIcons) lucide.createIcons();
+    }
+
+    app.post('api/products', payload)
+      .then((res) => {
+        app.toast(`Produk "${res.product.name}" berhasil ditambahkan oleh ${currentKasir}!`);
+        closeKasirProductModal();
+        return app.get('api/products-full');
+      })
+      .then((pd) => {
+        if (pd && pd.products) {
+          products = pd.products;
+          renderCats();
+          renderProducts();
+        }
+      })
+      .catch((err) => {
+        app.toast(err.message || 'Gagal menyimpan produk.', 'error');
+      })
+      .finally(() => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> <span>Simpan Produk</span>';
+          if (window.lucide && window.lucide.createIcons) lucide.createIcons();
+        }
+      });
+  }
+
   function cartEntries() { return [...cart.values()].sort((a, b) => a.ts - b.ts); }
 
   function addToCart(id) {
     const p = products.find((x) => x.id === id);
     if (!p) return;
-    if (cart.has(id)) {
-      if (cart.get(id).qty + 1 > p.stock) { app.toast('Stok ' + p.name + ' tidak cukup.', 'error'); return; }
-      cart.get(id).qty++;
+    if (isSpicyProduct(p)) {
+      openPosSpicyModal(p);
+      return;
+    }
+    if (isVariantProduct(p)) {
+      openPosPizzaModal(p);
+      return;
+    }
+    const key = p.id;
+    if (cart.has(key)) {
+      if (cart.get(key).qty + 1 > p.stock) { app.toast('Stok ' + p.name + ' tidak cukup.', 'error'); return; }
+      cart.get(key).qty++;
     } else {
       if (p.stock < 1) return;
-      cart.set(id, { p, qty: 1, ts: Date.now() });
+      cart.set(key, { p, key, qty: 1, unitPrice: p.price, ts: Date.now() });
     }
     renderCart();
   }
@@ -499,24 +633,36 @@
     if (!entries.length) {
       list.innerHTML = '<p class="text-center text-gray-400 text-sm py-10">Belum ada produk.<br />Klik produk untuk menambah.</p>';
     } else {
-      list.innerHTML = entries.map((it) => `
-        <div class="flex items-center gap-3 p-2.5 rounded-xl border border-gray-100 bg-gray-50/60">
+      list.innerHTML = entries.map((it) => {
+        const itemKey = it.key || it.p.id;
+        const uPrice = it.unitPrice || it.p.price;
+        return `
+        <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 bg-gray-50/60">
           ${app.renderProductImage(it.p, 'w-10 h-10 rounded-lg')}
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-800 truncate">${it.p.name}</p>
-            <p class="text-xs text-gray-400">${app.formatT(it.p.price)}</p>
+            <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span class="text-xs text-gray-400">${app.formatT(uPrice)}</span>
+              ${it.level ? `<span class="inline-block px-1.5 py-0.2 bg-red-100 text-red-700 text-[10px] font-black rounded-md">🌶️ Lvl ${it.level}</span>` : ''}
+              ${it.variant ? `<span class="inline-block px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">${it.variant}</span>` : ''}
+            </div>
+            ${it.note ? `<p class="text-[10px] text-gray-500 italic truncate mt-0.5" title="${app.escapeHtml(it.note)}">📝 ${app.escapeHtml(it.note)}</p>` : ''}
           </div>
-          <div class="flex items-center gap-1.5">
-            <button data-dec="${it.p.id}" class="w-7 h-7 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
+          <div class="flex items-center gap-1">
+            <button type="button" data-note-btn="${itemKey}" title="Catatan Produk" class="w-7 h-7 rounded-lg bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+            </button>
+            <button data-dec="${itemKey}" class="w-7 h-7 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
               <i data-lucide="minus" class="w-3.5 h-3.5"></i>
             </button>
-            <span class="w-7 text-center font-semibold text-sm">${it.qty}</span>
-            <button data-pl="true" data-id="${it.p.id}" class="w-7 h-7 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
+            <span class="w-6 text-center font-semibold text-xs">${it.qty}</span>
+            <button data-pl="true" data-id="${itemKey}" class="w-7 h-7 rounded-lg bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
             </button>
           </div>
-          <span class="text-sm font-bold text-gray-800 w-14 text-right">${app.formatT(it.p.price * it.qty)}</span>
-        </div>`).join('');
+          <span class="text-sm font-bold text-gray-800 w-16 text-right">${app.formatT(uPrice * it.qty)}</span>
+        </div>`;
+      }).join('');
     }
     lucide.createIcons();
 
@@ -726,6 +872,211 @@ let currentKasir = 'Kasir';
     document.getElementById('btn-pay').addEventListener('click', openPay);
     document.getElementById('btn-save-pos').addEventListener('click', () => app.toast('Gunakan tombol Bayar untuk menyimpan transaksi.', 'info'));
     document.getElementById('btn-confirm-pay').addEventListener('click', confirmPay);
+
+    // Spicy modal events
+    document.querySelectorAll('#pos-spicy-preset-group .btn-pos-spicy-lvl').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        posSpicyLevel = parseInt(btn.dataset.lvl, 10);
+        posIsExtraSpicy = false;
+        const extraToggle = document.getElementById('pos-spicy-extra-toggle');
+        const extraWrap = document.getElementById('pos-spicy-extra-wrap');
+        if (extraToggle) extraToggle.checked = false;
+        if (extraWrap) extraWrap.classList.add('hidden');
+        renderPosSpicyPillStates();
+        updatePosSpicySubtotal();
+      });
+    });
+
+    const posSpicyExtraToggle = document.getElementById('pos-spicy-extra-toggle');
+    const posSpicyExtraWrap = document.getElementById('pos-spicy-extra-wrap');
+    if (posSpicyExtraToggle) {
+      posSpicyExtraToggle.addEventListener('change', (e) => {
+        posIsExtraSpicy = e.target.checked;
+        if (posIsExtraSpicy) {
+          if (posSpicyExtraWrap) posSpicyExtraWrap.classList.remove('hidden');
+          posExtraSpicyLevel = Math.max(6, posExtraSpicyLevel || 6);
+          const lvlDisp = document.getElementById('pos-spicy-level-display');
+          const costText = document.getElementById('pos-spicy-extra-cost-text');
+          if (lvlDisp) lvlDisp.textContent = 'Level ' + posExtraSpicyLevel;
+          if (costText) costText.textContent = '+' + app.formatT((posExtraSpicyLevel - 5) * 2000) + ' / porsi';
+        } else {
+          if (posSpicyExtraWrap) posSpicyExtraWrap.classList.add('hidden');
+        }
+        renderPosSpicyPillStates();
+        updatePosSpicySubtotal();
+      });
+    }
+
+    const btnPosSpicyMinus = document.getElementById('btn-pos-spicy-minus');
+    const btnPosSpicyPlus = document.getElementById('btn-pos-spicy-plus');
+    if (btnPosSpicyMinus) {
+      btnPosSpicyMinus.addEventListener('click', () => {
+        if (posExtraSpicyLevel > 6) {
+          posExtraSpicyLevel -= 1;
+        } else {
+          posExtraSpicyLevel = 6;
+          posIsExtraSpicy = false;
+          posSpicyLevel = 5;
+          if (posSpicyExtraToggle) posSpicyExtraToggle.checked = false;
+          if (posSpicyExtraWrap) posSpicyExtraWrap.classList.add('hidden');
+        }
+        const lvlDisp = document.getElementById('pos-spicy-level-display');
+        const costText = document.getElementById('pos-spicy-extra-cost-text');
+        if (lvlDisp) lvlDisp.textContent = 'Level ' + posExtraSpicyLevel;
+        if (costText) costText.textContent = '+' + app.formatT((posExtraSpicyLevel - 5) * 2000) + ' / porsi';
+        renderPosSpicyPillStates();
+        updatePosSpicySubtotal();
+      });
+    }
+    if (btnPosSpicyPlus) {
+      btnPosSpicyPlus.addEventListener('click', () => {
+        posExtraSpicyLevel += 1;
+        const lvlDisp = document.getElementById('pos-spicy-level-display');
+        const costText = document.getElementById('pos-spicy-extra-cost-text');
+        if (lvlDisp) lvlDisp.textContent = 'Level ' + posExtraSpicyLevel;
+        if (costText) costText.textContent = '+' + app.formatT((posExtraSpicyLevel - 5) * 2000) + ' / porsi';
+        renderPosSpicyPillStates();
+        updatePosSpicySubtotal();
+      });
+    }
+
+    const btnPosAddSpicyConfirm = document.getElementById('btn-pos-add-spicy-confirm');
+    if (btnPosAddSpicyConfirm) {
+      btnPosAddSpicyConfirm.addEventListener('click', () => {
+        if (!currentPosSpicyProduct) return;
+        const level = posIsExtraSpicy ? posExtraSpicyLevel : posSpicyLevel;
+        const extraPrice = (level > 5) ? (level - 5) * 2000 : 0;
+        const note = (document.getElementById('pos-spicy-note')?.value || '').trim();
+        addSpicyToCart(currentPosSpicyProduct, level, extraPrice, note);
+        closePosSpicyModal();
+      });
+    }
+
+    const btnClosePosSpicy = document.getElementById('btn-close-pos-spicy');
+    const closePosSpicyBackdrop = document.getElementById('close-pos-spicy-backdrop');
+    if (btnClosePosSpicy) btnClosePosSpicy.addEventListener('click', closePosSpicyModal);
+    if (closePosSpicyBackdrop) closePosSpicyBackdrop.addEventListener('click', closePosSpicyModal);
+
+    // Variant modal events
+    const btnPosAddPizzaConfirm = document.getElementById('btn-pos-add-pizza-confirm');
+    if (btnPosAddPizzaConfirm) {
+      btnPosAddPizzaConfirm.addEventListener('click', () => {
+        if (!currentPosPizzaProduct) return;
+        const note = (document.getElementById('pos-pizza-note')?.value || '').trim();
+        addPizzaToCart(currentPosPizzaProduct, posPizzaVariant, note);
+        closePosPizzaModal();
+      });
+    }
+
+    const btnClosePosPizza = document.getElementById('btn-close-pos-pizza');
+    const closePosPizzaBackdrop = document.getElementById('close-pos-pizza-backdrop');
+    if (btnClosePosPizza) btnClosePosPizza.addEventListener('click', closePosPizzaModal);
+    if (closePosPizzaBackdrop) closePosPizzaBackdrop.addEventListener('click', closePosPizzaModal);
+
+    // Note modal events
+    const btnPosNoteSave = document.getElementById('btn-pos-note-save');
+    if (btnPosNoteSave) {
+      btnPosNoteSave.addEventListener('click', () => {
+        if (currentNoteCartKey && cart.has(currentNoteCartKey)) {
+          const inputEl = document.getElementById('pos-note-input');
+          cart.get(currentNoteCartKey).note = inputEl ? inputEl.value.trim() : '';
+          renderCart();
+        }
+        closePosNoteModal();
+      });
+    }
+    const btnPosNoteCancel = document.getElementById('btn-pos-note-cancel');
+    const btnClosePosNote = document.getElementById('btn-close-pos-note');
+    const closePosNoteBackdrop = document.getElementById('close-pos-note-backdrop');
+    if (btnPosNoteCancel) btnPosNoteCancel.addEventListener('click', closePosNoteModal);
+    if (btnClosePosNote) btnClosePosNote.addEventListener('click', closePosNoteModal);
+    if (closePosNoteBackdrop) closePosNoteBackdrop.addEventListener('click', closePosNoteModal);
+    // Kasir Tambah Produk Events
+    const btnKasirAddProduct = document.getElementById('btn-kasir-add-product');
+    if (btnKasirAddProduct) btnKasirAddProduct.addEventListener('click', openKasirProductModal);
+
+    const btnCloseKasirProduct = document.getElementById('btn-close-kasir-product');
+    const closeKasirProductBackdrop = document.getElementById('close-kasir-product-backdrop');
+    const btnCancelKasirProduct = document.getElementById('btn-cancel-kasir-product');
+    if (btnCloseKasirProduct) btnCloseKasirProduct.addEventListener('click', closeKasirProductModal);
+    if (closeKasirProductBackdrop) closeKasirProductBackdrop.addEventListener('click', closeKasirProductModal);
+    if (btnCancelKasirProduct) btnCancelKasirProduct.addEventListener('click', closeKasirProductModal);
+
+    const kasirProductForm = document.getElementById('kasir-product-form');
+    if (kasirProductForm) kasirProductForm.addEventListener('submit', saveKasirProduct);
+
+    const kpPrice = document.getElementById('kp-price');
+    if (kpPrice) kpPrice.addEventListener('input', function() {
+      this.value = app.escapeInput.toDisplay(this.value);
+    });
+
+    const kpModal = document.getElementById('kp-modal');
+    if (kpModal) kpModal.addEventListener('input', function() {
+      this.value = app.escapeInput.toDisplay(this.value);
+    });
+
+    const btnKpGenBarcode = document.getElementById('btn-kp-gen-barcode');
+    if (btnKpGenBarcode) {
+      btnKpGenBarcode.addEventListener('click', () => {
+        const rnd = '899' + Math.floor(100000000 + Math.random() * 900000000);
+        const barcodeInput = document.getElementById('kp-barcode');
+        if (barcodeInput) barcodeInput.value = rnd;
+      });
+    }
+
+    const btnKpUploadImg = document.getElementById('btn-kp-upload-img');
+    const kpFileInput = document.getElementById('kp-file-input');
+    if (btnKpUploadImg && kpFileInput) {
+      btnKpUploadImg.addEventListener('click', () => kpFileInput.click());
+      kpFileInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const previewImg = document.getElementById('kp-image-preview');
+            const previewEmoji = document.getElementById('kp-emoji-display');
+            const imgData = document.getElementById('kp-image-data');
+            const btnClear = document.getElementById('btn-kp-clear-img');
+            if (previewImg) { previewImg.src = e.target.result; previewImg.classList.remove('hidden'); }
+            if (previewEmoji) previewEmoji.classList.add('hidden');
+            if (imgData) imgData.value = e.target.result;
+            if (btnClear) btnClear.classList.remove('hidden');
+          };
+          reader.readAsDataURL(this.files[0]);
+        }
+      });
+    }
+
+    const btnKpClearImg = document.getElementById('btn-kp-clear-img');
+    if (btnKpClearImg) {
+      btnKpClearImg.addEventListener('click', () => {
+        const previewImg = document.getElementById('kp-image-preview');
+        const previewEmoji = document.getElementById('kp-emoji-display');
+        const imgData = document.getElementById('kp-image-data');
+        const fileInput = document.getElementById('kp-file-input');
+        if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+        if (previewEmoji) previewEmoji.classList.remove('hidden');
+        if (imgData) imgData.value = '';
+        if (fileInput) fileInput.value = '';
+        btnKpClearImg.classList.add('hidden');
+      });
+    }
+
+    document.querySelectorAll('#kp-quick-emojis .btn-kp-emoji').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const emoji = btn.dataset.emoji || btn.textContent.trim();
+        const previewEmoji = document.getElementById('kp-emoji-display');
+        const emojiVal = document.getElementById('kp-emoji-val');
+        const previewImg = document.getElementById('kp-image-preview');
+        const imgData = document.getElementById('kp-image-data');
+        const btnClear = document.getElementById('btn-kp-clear-img');
+        if (previewEmoji) { previewEmoji.textContent = emoji; previewEmoji.classList.remove('hidden'); }
+        if (emojiVal) emojiVal.value = emoji;
+        if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+        if (imgData) imgData.value = '';
+        if (btnClear) btnClear.classList.add('hidden');
+      });
+    });
+
     document.getElementById('btn-scan-barcode').addEventListener('click', openScanner);
     document.getElementById('btn-close-scanner').addEventListener('click', closeScanner);
     document.getElementById('close-scanner').addEventListener('click', closeScanner);

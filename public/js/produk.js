@@ -5,6 +5,7 @@
   let categories = [];
   let currentCatId = 'Semua';
   let currentSearch = '';
+  let currentCreatorFilter = 'Semua';
 
   const UNITS = ['Porsi', 'Pcs', 'Gelas', 'Botol', 'Pack', 'Kg', 'Lusin'];
   const EMOJIS = ['🍔', '🍕', '🍟', '🍜', '🍲', '🍗', '🥟', '🍛', '🥪', '🧋', '🥤', '🍊', '🥭', '☕', '🍵', '💧', '🍨', '🍩', '🍫', '🍞', '🥨', '🍥', '🛍️'];
@@ -149,10 +150,29 @@
       foot.classList.add('hidden');
       return;
     }
-    foot.classList.remove('hidden');
-    document.getElementById('result-count').textContent = products.length + ' produk';
+    let displayList = products;
+    if (currentCreatorFilter === 'kasir') {
+      displayList = displayList.filter(p => p.createdBy && p.createdBy.role === 'kasir');
+    } else if (currentCreatorFilter === 'admin') {
+      displayList = displayList.filter(p => !p.createdBy || p.createdBy.role !== 'kasir');
+    }
 
-    tbody.innerHTML = products.map((p) => `
+    foot.classList.remove('hidden');
+    document.getElementById('result-count').textContent = displayList.length + ' produk';
+
+    function creatorBadge(p) {
+      if (!p.createdBy || !p.createdBy.name) {
+        return `<span class="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-gray-400 bg-gray-50 border border-gray-100 rounded-full"><i data-lucide="shield" class="w-3 h-3 text-gray-300"></i> Admin (Default)</span>`;
+      }
+      const isKasir = p.createdBy.role === 'kasir';
+      return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-full ${isKasir ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}">
+        <i data-lucide="${isKasir ? 'user-check' : 'shield-check'}" class="w-3.5 h-3.5 ${isKasir ? 'text-amber-600' : 'text-blue-600'}"></i>
+        <span>${app.escapeHtml(p.createdBy.name)}</span>
+        <span class="text-[10px] px-1 py-0.2 rounded font-extrabold ${isKasir ? 'bg-amber-200 text-amber-900' : 'bg-blue-200 text-blue-900'}">${isKasir ? 'Kasir' : 'Admin'}</span>
+      </span>`;
+    }
+
+    tbody.innerHTML = displayList.map((p) => `
       <tr class="border-b border-gray-50 last:border-0 hover:bg-gray-50/70 transition group">
         <td class="px-6 py-3.5">
           <div class="flex items-center gap-3">
@@ -167,6 +187,7 @@
         <td class="px-6 py-3.5 text-gray-500 whitespace-nowrap">${app.formatT(p.modal)}</td>
         <td class="px-6 py-3.5 whitespace-nowrap">${stockBadge(p.stock)}</td>
         <td class="px-6 py-3.5">${catChip(p)}</td>
+        <td class="px-6 py-3.5 whitespace-nowrap">${creatorBadge(p)}</td>
         <td class="px-6 py-3.5">${statusBadge(p.status)}</td>
         <td class="px-6 py-3.5">
           <div class="flex items-center justify-end gap-2">
@@ -216,6 +237,21 @@
     document.getElementById('f-modal').value = product ? product.modal.toLocaleString('id-ID') : '';
     document.getElementById('f-stock').value = product ? product.stock : '';
     document.getElementById('f-barcode').value = product ? (product.barcode || '') : '';
+
+    const banner = document.getElementById('modal-creator-banner');
+    const bannerText = document.getElementById('modal-creator-text');
+    const bannerBadge = document.getElementById('modal-creator-badge');
+    if (product && product.createdBy && product.createdBy.name) {
+      if (banner) banner.classList.remove('hidden');
+      const isKasir = product.createdBy.role === 'kasir';
+      if (bannerText) bannerText.textContent = `Ditambahkan oleh: ${product.createdBy.name} (${isKasir ? 'Kasir' : 'Admin'})`;
+      if (bannerBadge) {
+        bannerBadge.textContent = isKasir ? 'Kasir' : 'Admin';
+        bannerBadge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold ${isKasir ? 'bg-amber-200 text-amber-900' : 'bg-blue-200 text-blue-900'}`;
+      }
+    } else {
+      if (banner) banner.classList.add('hidden');
+    }
     fillCategories(product ? product.categoryId : (categories[0] ? categories[0].id : ''));
     fillUnits(product ? product.unit : 'Porsi');
     const current = product ? product.emoji : '🛍️';
@@ -319,6 +355,14 @@
       currentSearch = this.value.trim();
       load();
     }, 300));
+
+    const creatorFilterEl = document.getElementById('creator-filter');
+    if (creatorFilterEl) {
+      creatorFilterEl.addEventListener('change', function () {
+        currentCreatorFilter = this.value;
+        load();
+      });
+    }
     ['f-price', 'f-modal'].forEach((id) => {
       document.getElementById(id).addEventListener('input', function () { this.value = app.escapeInput.toDisplay(this.value); });
     });

@@ -182,7 +182,7 @@ app.post('/api/public/orders', async (req, res) => {
       return res.status(400).json({ error: `Stok ${prod.name} tidak mencukupi (sisa ${prod.stock}).` });
     }
 
-    // Perhitungan Level Kepedasan (Khusus Enoci Pedec, Chikiwings, Bacic)
+    // Perhitungan Level Kepedasan (Khusus Enoci Pedec, Chikiwings, Bacic, Topoccii, dll)
     const isSpicy = prod.hasSpicyLevel || (db.isSpicyProduct && db.isSpicyProduct(prod));
     let spicyLevel = null;
     let extraPrice = 0;
@@ -575,6 +575,27 @@ function parseProductBody(body, existing) {
   if (emoji !== undefined) out.emoji = String(emoji || '🛍️').trim();
   if (image !== undefined) out.image = String(image || '').trim();
   if (status !== undefined) out.status = status === 'nonaktif' ? 'nonaktif' : 'aktif';
+  if (body && body.createdBy !== undefined) {
+    if (typeof body.createdBy === 'object' && body.createdBy !== null) {
+      out.createdBy = {
+        name: String(body.createdBy.name || 'Kasir').trim(),
+        role: String(body.createdBy.role || 'kasir').trim(),
+        at: body.createdBy.at || db.now()
+      };
+    } else if (typeof body.createdBy === 'string' && body.createdBy.trim()) {
+      out.createdBy = {
+        name: body.createdBy.trim(),
+        role: 'kasir',
+        at: db.now()
+      };
+    }
+  }
+  if (body && body.hasSpicyLevel !== undefined) {
+    out.hasSpicyLevel = body.hasSpicyLevel === true || body.hasSpicyLevel === 'true';
+    if (out.hasSpicyLevel) {
+      out.spicyConfig = body.spicyConfig || { minLevel: 1, maxDefaultLevel: 5, extraLevelPrice: 2000 };
+    }
+  }
   return out;
 }
 
@@ -588,6 +609,7 @@ app.post('/api/products', async (req, res) => {
     categoryId: req.body.categoryId || (first ? first.id : ''),
   });
   if (parsed.error) return res.status(400).json({ error: parsed.error });
+  const defaultCreator = req.body.createdBy || (req.user ? { name: req.user.name, role: req.user.role || 'admin', at: db.now() } : { name: 'Admin Warung', role: 'admin', at: db.now() });
   const p = {
     id: db.uid('prd_'),
     name: parsed.name,
@@ -600,6 +622,9 @@ app.post('/api/products', async (req, res) => {
     unit: parsed.unit || 'Pcs',
     barcode: parsed.barcode || '',
     status: parsed.status || 'aktif',
+    hasSpicyLevel: parsed.hasSpicyLevel || false,
+    spicyConfig: parsed.spicyConfig || null,
+    createdBy: parsed.createdBy || defaultCreator,
     createdAt: db.now(),
     updatedAt: db.now(),
   };
@@ -731,7 +756,7 @@ app.post('/api/orders', requireAuth, async (req, res) => {
     const qty = Math.max(1, parseInt(it.qty, 10) || 1);
     if (prod.stock < qty) return res.status(400).json({ error: 'Stok ' + prod.name + ' tidak cukup (' + prod.stock + ').' });
 
-    // Handle spicy level & extra cost (Khusus Enoci Pedec, Chikiwings, Bacic)
+    // Handle spicy level & extra cost (Khusus Enoci Pedec, Chikiwings, Bacic, Topoccii, dll)
     const isSpicy = prod.hasSpicyLevel || (db.isSpicyProduct && db.isSpicyProduct(prod));
     let spicyLevel = null;
     let extraPrice = 0;

@@ -342,12 +342,12 @@
 
   // ------------------------- 2B. PRODUCT OPTION MODAL (2 OPSI PESANAN) -------------------------
   
-  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic)
+  // Helper cek apakah produk memiliki fitur level kepedasan (Enoci Pedec, Chikiwings, Bacic, Topoccii, dll)
   function isSpicyProduct(p) {
     if (!p) return false;
     if (p.hasSpicyLevel === true) return true;
     const name = String(p.name || '').toLowerCase();
-    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng');
+    return name.includes('enoci') || name.includes('chikiwings') || name.includes('bacic') || name.includes('ayam mpek') || name.includes('cileng bejo') || name.includes('naci oyeng') || name.includes('topocci') || name.includes('topokki') || name.includes('topoki');
   }
 
   // Spicy option modal states

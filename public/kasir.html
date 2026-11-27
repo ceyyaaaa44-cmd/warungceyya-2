@@ -58,6 +58,11 @@
                 <i data-lucide="scan" class="w-5 h-5"></i>
                 <span class="hidden sm:inline">Scan</span>
               </button>
+              <button id="btn-kasir-add-product" type="button" title="Tambah Produk Baru" class="px-3.5 sm:px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-sm shadow-emerald-600/20 flex items-center gap-1.5 sm:gap-2 font-semibold text-sm transition active:scale-95 whitespace-nowrap">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                <span class="hidden sm:inline">Tambah Produk</span>
+                <span class="sm:hidden">Tambah</span>
+              </button>
             </div>
             <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 h-[420px] lg:h-auto overflow-y-auto no-scrollbar flex-1 pb-1 auto-rows-max content-start">
               <div class="skeleton h-32 rounded-2xl"></div>
@@ -356,6 +361,146 @@
         <div><span class="text-[10px] text-gray-400 block font-medium">Total Harga Satuan</span><span id="pos-spicy-unit-total" class="text-sm font-extrabold text-blue-600">Rp 15.000</span></div>
         <button type="button" id="btn-pos-add-spicy-confirm" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 active:scale-95">Tambah ke Keranjang</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Produk oleh Kasir -->
+  <div id="kasir-product-modal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" id="close-kasir-product-backdrop"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg modal-card overflow-hidden p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+            <i data-lucide="package-plus" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-800 text-base leading-tight">Tambah Produk (Kasir)</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Penambah: <span id="kasir-product-author" class="font-bold text-emerald-600">Kasir</span></p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-kasir-product" class="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form id="kasir-product-form" class="space-y-3.5">
+        <!-- Nama Produk -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Nama Produk <span class="text-red-500">*</span></label>
+          <input type="text" id="kp-name" required placeholder="Contoh: Topoccii Keju Spesial" class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition" />
+        </div>
+
+        <!-- Kategori & Satuan -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Kategori <span class="text-red-500">*</span></label>
+            <select id="kp-category" class="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition">
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Satuan</label>
+            <select id="kp-unit" class="w-full px-3 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition">
+              <option value="Porsi">Porsi</option>
+              <option value="Pcs">Pcs</option>
+              <option value="Gelas">Gelas</option>
+              <option value="Cup">Cup</option>
+              <option value="Bungkus">Bungkus</option>
+              <option value="Botol">Botol</option>
+              <option value="Box">Box</option>
+              <option value="Piring">Piring</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Harga Jual & Harga Modal -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Harga Jual (Rp) <span class="text-red-500">*</span></label>
+            <input type="text" id="kp-price" required placeholder="15.000" class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 font-bold transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Modal / Beli (Rp)</label>
+            <input type="text" id="kp-modal" placeholder="10.000" class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition" />
+          </div>
+        </div>
+
+        <!-- Stok & Barcode -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Stok Awal</label>
+            <input type="number" id="kp-stock" min="0" value="50" class="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Barcode (Opsional)</label>
+            <div class="relative">
+              <input type="text" id="kp-barcode" placeholder="Scan / ketik barcode" class="w-full pl-3 pr-8 py-2.5 text-xs bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:border-emerald-500 text-gray-800 transition" />
+              <button type="button" id="btn-kp-gen-barcode" title="Buat Barcode Acak" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Opsi Level Pedas -->
+        <div class="p-3 bg-red-50/70 border border-red-200/80 rounded-2xl flex items-center justify-between">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" id="kp-has-spicy" class="w-4 h-4 text-red-600 rounded cursor-pointer" />
+            <div>
+              <span class="text-xs font-bold text-gray-800 block">Fitur Tingkat Kepedasan 🌶️</span>
+              <span class="text-[10px] text-gray-500">Pelanggan/kasir bisa memilih Level 1 s.d. 5 saat memesan</span>
+            </div>
+          </label>
+          <span class="text-[10px] font-extrabold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Lvl 1-5</span>
+        </div>
+
+        <!-- Foto atau Emoji Produk -->
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1.5">Foto atau Ikon Produk</label>
+          <div class="flex items-center gap-3">
+            <div id="kp-preview-box" class="w-14 h-14 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center text-2xl overflow-hidden shrink-0 relative">
+              <span id="kp-emoji-display">🛍️</span>
+              <img id="kp-image-preview" src="" alt="" class="w-full h-full object-cover hidden" />
+            </div>
+            <div class="flex-1 space-y-1.5">
+              <div class="flex items-center gap-2">
+                <input type="file" id="kp-file-input" accept="image/*" class="hidden" />
+                <button type="button" id="btn-kp-upload-img" class="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 transition">
+                  <i data-lucide="image" class="w-3.5 h-3.5"></i> Upload Foto
+                </button>
+                <button type="button" id="btn-kp-clear-img" class="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold transition hidden">
+                  Hapus
+                </button>
+              </div>
+              <!-- Emoji Quick Picker -->
+              <div class="flex items-center gap-1.5 flex-wrap" id="kp-quick-emojis">
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍲">🍲</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍢">🍢</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍗">🍗</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍟">🍟</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍔">🍔</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍕">🍕</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🥤">🥤</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🧋">🧋</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🥟">🥟</button>
+                <button type="button" class="btn-kp-emoji text-sm hover:scale-125 transition" data-emoji="🍨">🍨</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="kp-image-data" value="" />
+          <input type="hidden" id="kp-emoji-val" value="🛍️" />
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+          <button type="button" id="btn-cancel-kasir-product" class="px-4 py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition">Batal</button>
+          <button type="submit" id="btn-submit-kasir-product" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-emerald-600/20 active:scale-95 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Simpan Produk</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
